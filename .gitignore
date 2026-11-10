@@ -21,6 +21,7 @@ package-lock.json
 .cursor
 .codex
 .agents
+.pnpm-store
 .DS_Store
 *.suo
 *.ntvs*
