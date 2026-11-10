@@ -1,0 +1,30 @@
+{
+    "name": "@qqfeiche/client",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vue-tsc --noEmit && vite build",
+        "preview": "vite preview",
+        "typecheck": "vue-tsc --noEmit",
+        "theme": "theme-kit generate"
+    },
+    "dependencies": {
+        "element-plus": "catalog:",
+        "pinia": "catalog:",
+        "vue": "catalog:",
+        "vue-router": "catalog:"
+    },
+    "devDependencies": {
+        "@coderjc/theme-kit": "catalog:",
+        "@types/node": "catalog:",
+        "@vitejs/plugin-vue": "catalog:",
+        "sass-embedded": "catalog:",
+        "typescript": "catalog:",
+        "unplugin-auto-import": "catalog:",
+        "unplugin-vue-components": "catalog:",
+        "vite": "catalog:",
+        "vue-tsc": "catalog:"
+    }
+}

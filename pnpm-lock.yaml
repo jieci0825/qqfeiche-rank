@@ -4,6 +4,48 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@coderjc/theme-kit':
+      specifier: ^0.2.0
+      version: 0.2.0
+    '@types/node':
+      specifier: ^26.6.6
+      version: 26.6.6
+    '@vitejs/plugin-vue':
+      specifier: ^6.0.10
+      version: 6.0.10
+    element-plus:
+      specifier: ^2.14.8
+      version: 2.14.8
+    pinia:
+      specifier: ^4.1.0
+      version: 4.1.0
+    sass-embedded:
+      specifier: ^1.108.1
+      version: 1.108.1
+    typescript:
+      specifier: ^6.0.3
+      version: 6.0.3
+    unplugin-auto-import:
+      specifier: ^21.1.0
+      version: 21.1.0
+    unplugin-vue-components:
+      specifier: ^32.1.0
+      version: 32.1.0
+    vite:
+      specifier: ^8.3.6
+      version: 8.3.6
+    vue:
+      specifier: ^3.5.45
+      version: 3.5.45
+    vue-router:
+      specifier: ^5.4.0
+      version: 5.4.0
+    vue-tsc:
+      specifier: ^3.3.14
+      version: 3.3.14
+
 importers:
 
   .:
@@ -12,93 +54,93 @@ importers:
         specifier: ^2.11.10
         version: 2.11.10
 
-  admin:
+  apps/admin:
     dependencies:
       element-plus:
-        specifier: ^2.14.8
+        specifier: 'catalog:'
         version: 2.14.8(vue@3.5.45(typescript@6.0.3))
       pinia:
-        specifier: ^4.1.0
+        specifier: 'catalog:'
         version: 4.1.0(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.45(typescript@6.0.3))
       vue:
-        specifier: ^3.5.45
+        specifier: 'catalog:'
         version: 3.5.45(typescript@6.0.3)
       vue-router:
-        specifier: ^5.4.0
+        specifier: 'catalog:'
         version: 5.4.0(@vue/compiler-sfc@3.5.45)(pinia@4.1.0(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.45(typescript@6.0.3)))(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1))(vue@3.5.45(typescript@6.0.3))
     devDependencies:
       '@coderjc/theme-kit':
-        specifier: ^0.2.0
+        specifier: 'catalog:'
         version: 0.2.0
       '@types/node':
-        specifier: ^26.6.6
+        specifier: 'catalog:'
         version: 26.6.6
       '@vitejs/plugin-vue':
-        specifier: ^6.0.10
+        specifier: 'catalog:'
         version: 6.0.10(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1))(vue@3.5.45(typescript@6.0.3))
       sass-embedded:
-        specifier: ^1.108.1
+        specifier: 'catalog:'
         version: 1.108.1
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       unplugin-auto-import:
-        specifier: ^21.1.0
+        specifier: 'catalog:'
         version: 21.1.0(@vueuse/core@15.0.0(vue@3.5.45(typescript@6.0.3)))(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1))
       unplugin-vue-components:
-        specifier: ^32.1.0
+        specifier: 'catalog:'
         version: 32.1.0(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1))(vue@3.5.45(typescript@6.0.3))
       vite:
-        specifier: ^8.3.6
+        specifier: 'catalog:'
         version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1)
       vue-tsc:
-        specifier: ^3.3.14
+        specifier: 'catalog:'
         version: 3.3.14(typescript@6.0.3)
 
-  client:
+  apps/client:
     dependencies:
       element-plus:
-        specifier: ^2.14.8
+        specifier: 'catalog:'
         version: 2.14.8(vue@3.5.45(typescript@6.0.3))
       pinia:
-        specifier: ^4.1.0
+        specifier: 'catalog:'
         version: 4.1.0(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.45(typescript@6.0.3))
       vue:
-        specifier: ^3.5.45
+        specifier: 'catalog:'
         version: 3.5.45(typescript@6.0.3)
       vue-router:
-        specifier: ^5.4.0
+        specifier: 'catalog:'
         version: 5.4.0(@vue/compiler-sfc@3.5.45)(pinia@4.1.0(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.45(typescript@6.0.3)))(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1))(vue@3.5.45(typescript@6.0.3))
     devDependencies:
       '@coderjc/theme-kit':
-        specifier: ^0.2.0
+        specifier: 'catalog:'
         version: 0.2.0
       '@types/node':
-        specifier: ^26.6.6
+        specifier: 'catalog:'
         version: 26.6.6
       '@vitejs/plugin-vue':
-        specifier: ^6.0.10
+        specifier: 'catalog:'
         version: 6.0.10(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1))(vue@3.5.45(typescript@6.0.3))
       sass-embedded:
-        specifier: ^1.108.1
+        specifier: 'catalog:'
         version: 1.108.1
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       unplugin-auto-import:
-        specifier: ^21.1.0
+        specifier: 'catalog:'
         version: 21.1.0(@vueuse/core@15.0.0(vue@3.5.45(typescript@6.0.3)))(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1))
       unplugin-vue-components:
-        specifier: ^32.1.0
+        specifier: 'catalog:'
         version: 32.1.0(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1))(vue@3.5.45(typescript@6.0.3))
       vite:
-        specifier: ^8.3.6
+        specifier: 'catalog:'
         version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass-embedded@1.108.1)(sass@1.108.1)
       vue-tsc:
-        specifier: ^3.3.14
+        specifier: 'catalog:'
         version: 3.3.14(typescript@6.0.3)
 
-  server:
+  apps/server:
     dependencies:
       '@fastify/static':
         specifier: ^10.1.10
@@ -108,10 +150,10 @@ importers:
         version: 5.12.8
     devDependencies:
       '@types/node':
-        specifier: ^26.6.6
+        specifier: 'catalog:'
         version: 26.6.6
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
 
 packages:
