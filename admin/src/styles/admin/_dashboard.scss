@@ -1,0 +1,55 @@
+@use '../variables' as *;
+
+.admin-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+
+    @include tablet {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include mobile {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-stat__label {
+    color: var(--tk-color-text-tertiary);
+    font-size: 13px;
+}
+
+.admin-stat__value {
+    font-size: 30px;
+    line-height: 1;
+}
+
+.admin-card-title {
+    font-weight: 600;
+}
+
+.admin-hint {
+    margin: 0;
+    color: var(--tk-color-text-secondary);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}

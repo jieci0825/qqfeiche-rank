@@ -1,0 +1,17 @@
+@use '../variables' as *;
+
+.admin-section {
+    min-height: 360px;
+}
+
+.admin-section__empty-mark {
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 20px;
+    background: var(--tk-color-bg-hover);
+    color: var(--tk-color-text-tertiary);
+    font-size: 28px;
+    font-weight: 600;
+}

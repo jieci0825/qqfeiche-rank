@@ -1,0 +1,30 @@
+{
+    "name": "@qqfeiche/client",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vue-tsc --noEmit && vite build",
+        "preview": "vite preview",
+        "typecheck": "vue-tsc --noEmit",
+        "theme": "theme-kit generate"
+    },
+    "dependencies": {
+        "element-plus": "^2.14.8",
+        "pinia": "^4.1.0",
+        "vue": "^3.5.45",
+        "vue-router": "^5.4.0"
+    },
+    "devDependencies": {
+        "@coderjc/theme-kit": "^0.2.0",
+        "@types/node": "^26.6.6",
+        "@vitejs/plugin-vue": "^6.0.10",
+        "sass-embedded": "^1.108.1",
+        "typescript": "^6.0.3",
+        "unplugin-auto-import": "^21.1.0",
+        "unplugin-vue-components": "^32.1.0",
+        "vite": "^8.3.6",
+        "vue-tsc": "^3.3.14"
+    }
+}

@@ -1,0 +1,25 @@
+@use './variables' as *;
+
+// 让 Element Plus 的基础变量跟随 theme-kit 生成的主题。
+// 使用 html:root 提高优先级，避免被按需加载的 Element Plus base.css 覆盖。
+html:root {
+    --el-font-family: #{$font-family-base};
+    --el-border-radius-base: #{$radius-sm};
+
+    --el-color-primary: var(--tk-color-primary);
+    --el-color-primary-light-3: var(--tk-primary-400);
+    --el-color-primary-light-5: var(--tk-primary-300);
+    --el-color-primary-light-7: var(--tk-primary-200);
+    --el-color-primary-light-8: var(--tk-primary-100);
+    --el-color-primary-light-9: var(--tk-primary-50);
+    --el-color-primary-dark-2: var(--tk-primary-700);
+
+    --el-bg-color: var(--tk-color-bg-surface);
+    --el-bg-color-page: var(--tk-color-bg-page);
+    --el-text-color-primary: var(--tk-color-text-primary);
+    --el-text-color-regular: var(--tk-color-text-secondary);
+    --el-text-color-secondary: var(--tk-color-text-tertiary);
+    --el-border-color: var(--tk-color-border);
+    --el-border-color-light: var(--tk-color-border);
+    --el-fill-color-light: var(--tk-color-bg-hover);
+}

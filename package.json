@@ -1,0 +1,22 @@
+{
+    "name": "qqfeiche-rank",
+    "version": "0.0.0",
+    "private": true,
+    "packageManager": "pnpm@11.4.0",
+    "engines": {
+        "node": ">=22.18.0"
+    },
+    "scripts": {
+        "dev": "concurrently -k -n client,admin,server -c cyan,magenta,yellow \"pnpm --filter @qqfeiche/client dev\" \"pnpm --filter @qqfeiche/admin dev\" \"pnpm --filter @qqfeiche/server dev\"",
+        "dev:client": "pnpm --filter @qqfeiche/client dev",
+        "dev:admin": "pnpm --filter @qqfeiche/admin dev",
+        "dev:server": "pnpm --filter @qqfeiche/server dev",
+        "build": "pnpm --filter @qqfeiche/client build && pnpm --filter @qqfeiche/admin build",
+        "typecheck": "pnpm -r typecheck",
+        "start": "pnpm --filter @qqfeiche/server start",
+        "theme": "pnpm --filter @qqfeiche/client theme && pnpm --filter @qqfeiche/admin theme"
+    },
+    "devDependencies": {
+        "concurrently": "^10.0.7"
+    }
+}

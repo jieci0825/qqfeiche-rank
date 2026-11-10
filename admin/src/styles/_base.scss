@@ -1,0 +1,33 @@
+@use './variables' as *;
+
+body {
+    background: var(--tk-color-bg-page);
+    color: var(--tk-color-text-primary);
+    font-family: $font-family-base;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    color: var(--tk-color-primary);
+    text-decoration: none;
+
+    &:hover {
+        opacity: 0.8;
+    }
+}
+
+code {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--tk-color-bg-hover);
+    color: var(--tk-color-text-primary);
+    font-family: $font-family-mono;
+    font-size: 0.9em;
+}
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}

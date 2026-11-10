@@ -1,0 +1,113 @@
+@use '../variables' as *;
+
+.client-app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+
+    .client-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        height: $header-height;
+        padding: 0 32px;
+        border-bottom: 1px solid var(--tk-color-border);
+        background: color-mix(in srgb, var(--tk-color-bg-surface) 88%, transparent);
+        backdrop-filter: blur(12px);
+    }
+
+    .client-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--tk-color-text-primary);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+    }
+
+    .client-brand__mark {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: $radius-sm;
+        background: var(--tk-color-primary);
+        color: var(--tk-color-on-primary);
+        font-size: 14px;
+    }
+
+    .client-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        a {
+            padding: 7px 12px;
+            border-radius: $radius-sm;
+            color: var(--tk-color-text-secondary);
+            font-size: 14px;
+            transition:
+                background-color 0.2s ease,
+                color 0.2s ease;
+
+            &:hover {
+                background: var(--tk-color-bg-hover);
+                color: var(--tk-color-text-primary);
+                opacity: 1;
+            }
+
+            &.router-link-active {
+                background: var(--tk-color-bg-active);
+                color: var(--tk-color-text-primary);
+                font-weight: 500;
+            }
+        }
+    }
+
+    .client-nav__admin {
+        border: 1px solid var(--tk-color-border);
+    }
+
+    .client-main {
+        flex: 1;
+        width: 100%;
+        max-width: $content-max-width;
+        margin: 0 auto;
+        padding: $page-padding 24px;
+    }
+
+    .client-footer {
+        padding: 24px;
+        color: var(--tk-color-text-tertiary);
+        font-size: 13px;
+        text-align: center;
+    }
+
+    @include mobile {
+        .client-header {
+            height: auto;
+            min-height: $header-height;
+            padding: 12px 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .client-nav {
+            gap: 4px;
+
+            a {
+                padding: 6px 9px;
+                font-size: 13px;
+            }
+        }
+
+        .client-main {
+            padding: 32px 20px;
+        }
+    }
+}

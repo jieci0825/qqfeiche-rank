@@ -1,0 +1,10 @@
+// 后台管理样式入口：所有 Sass 样式都从 src/styles 汇总。
+@use './generate/theme';
+@use './reset';
+@use './base';
+@use './element';
+
+@use './admin/layout';
+@use './admin/dashboard';
+@use './admin/login';
+@use './admin/section';
