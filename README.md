@@ -23,7 +23,10 @@ qqfeiche-rank/
 - Element Plus 按需引入
 - Sass 样式，统一放在 `client/src/styles`
 - 开发端口：`5173`
-- 页面：`/`、`/about`
+- 页面：`/`（榜单与筛选）、`/tracks/:id`（赛道详情与历史）、`/about`
+- 当前 C 端为示例数据预览，数据集中在 `apps/client/src/data/tracks.ts`，尚未接入业务 API。
+- 支持 1–7 星筛选、赛道 / 车手 / 车队搜索、最近更新排序和分页，筛选条件保存在 URL 中。
+- 视频使用录入的 http(s) 外链，在新标签页打开；未提供地址时展示缺省状态。
 
 ### admin：后台管理
 
@@ -107,6 +110,8 @@ client 和 admin 各自通过 `unplugin-vue-components`、`unplugin-auto-import`
 - `generate/theme.scss` 由 theme-kit 生成，不要手动修改。
 - `_element.scss` 把 Element Plus 的 CSS 变量映射到主题变量。
 - 修改 `theme.config.ts` 后执行 `pnpm theme` 重新生成两端的主题文件。
+- C 端采用扁平深色样式：small / base / large 圆角分别为 4 / 6 / 8px，不使用阴影、发光或拟态效果。
+- `apps/client/public/images` 中的图片裁切自页面设计参考稿，仅用于原型预览，正式上线前应替换为独立原图。
 
 ## 开发说明
 
