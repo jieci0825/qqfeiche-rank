@@ -105,6 +105,12 @@ html:root {
     --el-mask-color: rgb(255 255 255 / 90%);
     --el-mask-color-extra-light: rgb(255 255 255 / 30%);
     --el-overlay-color-lighter: var(--tk-color-bg-mask);
+
+    // 阴影：全部取消
+    --el-box-shadow: none;
+    --el-box-shadow-light: none;
+    --el-box-shadow-lighter: none;
+    --el-box-shadow-dark: none;
 }
 
 html.dark {
@@ -198,12 +204,9 @@ html.dark {
     --el-mask-color-extra-light: rgb(0 0 0 / 30%);
     --el-overlay-color-lighter: var(--tk-color-bg-mask);
 
-    // 阴影（对齐 EP dark/var.scss，未引入官方 dark/css-vars 时需要手动提供）
-    --el-box-shadow:
-        0 12px 32px 4px rgb(0 0 0 / 36%), 0 8px 20px rgb(0 0 0 / 72%);
-    --el-box-shadow-light: 0 0 12px rgb(0 0 0 / 72%);
-    --el-box-shadow-lighter: 0 0 6px rgb(0 0 0 / 72%);
-    --el-box-shadow-dark:
-        0 16px 48px 16px rgb(0 0 0 / 72%), 0 12px 32px #000000,
-        0 8px 16px -8px #000000;
+    // 阴影：全部取消
+    --el-box-shadow: none;
+    --el-box-shadow-light: none;
+    --el-box-shadow-lighter: none;
+    --el-box-shadow-dark: none;
 }
