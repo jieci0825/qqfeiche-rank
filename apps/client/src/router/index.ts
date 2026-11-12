@@ -10,18 +10,27 @@ const router = createRouter({
             children: [
                 {
                     path: '',
-                    name: 'home',
-                    component: () => import('@/views/HomeView.vue'),
+                    redirect: { name: 'records' },
                 },
                 {
-                    path: 'about',
-                    name: 'about',
-                    component: () => import('@/views/AboutView.vue'),
+                    path: 'records',
+                    name: 'records',
+                    component: () => import('@/views/RecordsView.vue'),
                 },
                 {
-                    path: ':pathMatch(.*)*',
-                    name: 'not-found',
-                    component: () => import('@/views/NotFoundView.vue'),
+                    path: 'drivers',
+                    name: 'drivers',
+                    component: () => import('@/views/DriversView.vue'),
+                },
+                {
+                    path: 'teams',
+                    name: 'teams',
+                    component: () => import('@/views/TeamsView.vue'),
+                },
+                {
+                    path: 'stats',
+                    name: 'stats',
+                    component: () => import('@/views/StatsView.vue'),
                 },
             ],
         },
