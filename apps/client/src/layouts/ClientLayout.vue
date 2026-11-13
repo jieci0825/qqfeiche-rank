@@ -37,7 +37,150 @@ import { Icon } from '@/icons'
         </header>
 
         <main class="client-main">
-            <RouterView />
+            <div class="client-container">
+                <RouterView />
+            </div>
         </main>
     </div>
 </template>
+
+<style scoped lang="scss">
+// C 端布局：header 固定高度，main 撑满剩余空间。
+.client-app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.client-header {
+    display: flex;
+    flex: 0 0 64px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--tk-color-border);
+    background: var(--tk-color-bg-surface);
+}
+
+.client-header__left {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 16px;
+}
+
+.client-brand {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    text-decoration: none;
+}
+
+.client-brand__logo {
+    display: block;
+    width: auto;
+    height: 40px;
+}
+
+.client-header__divider {
+    flex-shrink: 0;
+    width: 1px;
+    height: 24px;
+    background: var(--tk-color-border);
+}
+
+.client-header__title {
+    flex-shrink: 0;
+    color: var(--tk-color-text-primary);
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.client-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 16px;
+
+    a {
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: var(--tk-color-text-primary);
+        font-size: 15px;
+        font-weight: 500;
+        white-space: nowrap;
+        text-decoration: none;
+        transition:
+            background-color 0.2s ease,
+            color 0.2s ease;
+
+        &:hover {
+            background: var(--tk-color-bg-hover);
+        }
+
+        &.router-link-active {
+            background: var(--tk-color-primary-subtle);
+            color: var(--tk-color-primary);
+            font-weight: 600;
+        }
+    }
+}
+
+.client-header__actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 16px;
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+.client-guide {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 4px;
+    border: none;
+    background: none;
+    color: var(--tk-color-text-secondary);
+    font-size: 14px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: var(--tk-color-text-primary);
+    }
+}
+
+.client-contact {
+    :deep(> span) {
+        gap: 6px;
+    }
+}
+
+.client-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    padding: 20px;
+}
+
+// 内容区域：限制最大宽度并水平居中，避免超宽屏阅读分散。
+.client-container {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    border: 1px solid var(--tk-color-border);
+    background: var(--tk-color-bg-surface);
+}
+</style>
