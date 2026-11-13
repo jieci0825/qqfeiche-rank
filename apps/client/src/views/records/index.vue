@@ -39,28 +39,28 @@ const keyword = ref('')
     display: flex;
     flex: 1;
     gap: 20px;
-}
 
-.records-page__main {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 20px;
-    min-width: 0;
-}
+    .records-page__main {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
 
-.records-grid {
-    display: grid;
-    flex: 1;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-    align-content: start;
-}
+        .records-grid {
+            display: grid;
+            flex: 1;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            align-content: start;
+        }
+    }
 
-.records-filter {
-    flex: 0 0 320px;
-    width: 320px;
-    height: 1500px;
-    border: 1px solid var(--tk-color-border);
+    .records-filter {
+        flex: 0 0 320px;
+        width: 320px;
+        height: 1500px;
+        border: 1px solid var(--tk-color-border);
+    }
 }
 </style>
