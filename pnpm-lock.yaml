@@ -9,6 +9,12 @@ catalogs:
     '@coderjc/theme-kit':
       specifier: ^0.2.0
       version: 0.2.0
+    '@iconify-json/ep':
+      specifier: ^1.2.4
+      version: 1.2.4
+    '@iconify/vue':
+      specifier: ^5.0.5
+      version: 5.0.5
     '@types/node':
       specifier: ^26.6.6
       version: 26.6.6
@@ -56,6 +62,12 @@ importers:
 
   apps/admin:
     dependencies:
+      '@iconify-json/ep':
+        specifier: 'catalog:'
+        version: 1.2.4
+      '@iconify/vue':
+        specifier: 'catalog:'
+        version: 5.0.5(vue@3.5.45(typescript@6.0.3))
       element-plus:
         specifier: 'catalog:'
         version: 2.14.8(vue@3.5.45(typescript@6.0.3))
@@ -99,6 +111,12 @@ importers:
 
   apps/client:
     dependencies:
+      '@iconify-json/ep':
+        specifier: 'catalog:'
+        version: 1.2.4
+      '@iconify/vue':
+        specifier: 'catalog:'
+        version: 5.0.5(vue@3.5.45(typescript@6.0.3))
       element-plus:
         specifier: 'catalog:'
         version: 2.14.8(vue@3.5.45(typescript@6.0.3))
@@ -255,6 +273,17 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@iconify-json/ep@1.2.4':
+    resolution: {integrity: sha512-dtKOueYp1CRxAUW+GayIiuHqOlELfO0W3QiHOH4NjvKtBn2uxZbByIKQ+7B1Hj+AgZrhWTie3QKYkZn+VQVZrw==}
+
+  '@iconify/types@2.0.0':
+    resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
+
+  '@iconify/vue@5.0.5':
+    resolution: {integrity: sha512-O4SHjEKCQ2KTupa0tOd7MIuDdi8Pg6y9fCvsqccX8nYW8Wuy+ZbEgpzw7gZTN3ThyFjY9uo29ZLZ8MQjjMJRBw==}
+    peerDependencies:
+      vue: '>=3.0.0'
 
   '@isaacs/nonrecursive-glob-match@1.1.0':
     resolution: {integrity: sha512-GPm/Dbvk5RLmhRnxXIa7nTpK0xtl4E0wj0MslsuNiJ1FIROU+2+9lgUC/dgF7Ey4QCWhfEsgxilMRMCdHPfDfw==}
@@ -1623,6 +1652,17 @@ snapshots:
       '@floating-ui/utils': 0.2.12
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@iconify-json/ep@1.2.4':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify/types@2.0.0': {}
+
+  '@iconify/vue@5.0.5(vue@3.5.45(typescript@6.0.3))':
+    dependencies:
+      '@iconify/types': 2.0.0
+      vue: 3.5.45(typescript@6.0.3)
 
   '@isaacs/nonrecursive-glob-match@1.1.0': {}
 

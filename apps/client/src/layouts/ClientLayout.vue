@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+import { Icon } from '@/icons'
 </script>
 
 <template>
@@ -24,19 +25,12 @@ import { RouterLink, RouterView } from 'vue-router'
 
             <div class="client-header__actions">
                 <button class="client-guide" type="button">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M9.6 9.2a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4" />
-                        <path d="M12 16.8h.01" />
-                    </svg>
+                    <Icon icon="ep:question-filled" aria-hidden="true" />
                     使用说明
                 </button>
 
                 <button class="client-contact" type="button">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="8.5" r="3.5" />
-                        <path d="M5 19c.8-3.2 3.6-5 7-5s6.2 1.8 7 5" />
-                    </svg>
+                    <Icon icon="ep:user" aria-hidden="true" />
                     联系
                 </button>
             </div>

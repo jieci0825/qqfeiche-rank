@@ -16,6 +16,9 @@ catalog:
     unplugin-auto-import: ^21.1.0
     unplugin-vue-components: ^32.1.0
     "@coderjc/theme-kit": ^0.2.0
+    # 图标（client / admin 共用同一方案）
+    "@iconify/vue": ^5.0.5
+    "@iconify-json/ep": ^1.2.4
     # 全部项目共用
     typescript: ^6.0.3
     "@types/node": ^26.6.6

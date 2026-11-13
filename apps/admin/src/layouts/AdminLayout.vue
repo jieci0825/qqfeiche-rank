@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { Icon } from '@/icons'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -32,7 +33,10 @@ const menus = [
                 </el-menu-item>
             </el-menu>
 
-            <a class="admin-back" :href="clientUrl">← 返回 C 端</a>
+            <a class="admin-back" :href="clientUrl">
+                <Icon icon="ep:arrow-left" aria-hidden="true" />
+                返回 C 端
+            </a>
         </aside>
 
         <div class="admin-content">

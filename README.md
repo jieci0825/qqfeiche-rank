@@ -102,6 +102,26 @@ client 和 admin 各自通过 `unplugin-vue-components`、`unplugin-auto-import`
 
 `ElLoading` 和 `ElInfiniteScroll` 同时在各自项目的 `src/main.ts` 中注册。语言包通过 `App.vue` 的 `<el-config-provider :locale="zhCn">` 注入。
 
+## 图标
+
+client 和 admin 统一使用 `@iconify/vue` 的 `<Icon>` 组件，图标集为 Element Plus（`ep`）。
+
+- 依赖：`@iconify/vue` + `@iconify-json/ep`。
+- 两端各自的 `src/icons.ts` 在启动时用 `addCollection` 离线注册图标集，运行时不请求 Iconify API。
+- 组件统一从 `@/icons` 导入，图标名使用 `ep:` 前缀：
+
+```vue
+<script setup lang="ts">
+import { Icon } from '@/icons'
+</script>
+
+<template>
+    <Icon icon="ep:search" />
+</template>
+```
+
+需要新增其它图标集时，安装对应的 `@iconify-json/*`，并在两端的 `src/icons.ts` 中追加 `addCollection`。
+
 ## 样式约定
 
 - 每个前端的样式都集中在自己的 `src/styles`，SFC 内部不写 `<style>`。

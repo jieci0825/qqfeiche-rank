@@ -63,7 +63,9 @@
 }
 
 .admin-back {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     margin: 16px 8px 0;
     color: var(--tk-color-text-tertiary);
     font-size: 13px;

@@ -52,4 +52,10 @@
     margin-top: 20px;
     text-align: center;
     font-size: 13px;
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
 }

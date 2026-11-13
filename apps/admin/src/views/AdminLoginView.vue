@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Icon } from '@/icons'
 
 const clientUrl = import.meta.env.DEV ? 'http://localhost:5173/' : '/'
 
@@ -47,7 +48,10 @@ function submit() {
             </el-form>
 
             <div class="admin-login__footer">
-                <a :href="clientUrl">← 返回 C 端</a>
+                <a :href="clientUrl">
+                    <Icon icon="ep:arrow-left" aria-hidden="true" />
+                    返回 C 端
+                </a>
             </div>
         </el-card>
     </div>

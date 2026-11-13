@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { ElInfiniteScroll, ElLoading } from 'element-plus'
+import '@/icons'
 import '@/styles/element/manual'
 import '@/styles/index.scss'
 import App from './App.vue'

@@ -11,6 +11,8 @@
         "theme": "theme-kit generate"
     },
     "dependencies": {
+        "@iconify-json/ep": "catalog:",
+        "@iconify/vue": "catalog:",
         "element-plus": "catalog:",
         "pinia": "catalog:",
         "vue": "catalog:",
