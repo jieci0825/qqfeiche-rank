@@ -353,10 +353,6 @@ $record-font:
         transition: border-color 0.2s ease;
         cursor: pointer;
 
-        &:hover {
-            border-color: var(--tk-color-border-strong);
-        }
-
         &:hover .record-card__cover-image {
             transform: scale(1.04);
         }
