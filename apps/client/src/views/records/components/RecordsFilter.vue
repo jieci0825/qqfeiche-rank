@@ -133,39 +133,39 @@ $gap: 15px;
     border: 1px solid var(--tk-color-border);
     border-radius: var(--radius-base);
 
-    &__header {
+    .records-filter__header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: $gap;
         padding-bottom: $gap;
         border-bottom: 1px solid var(--tk-color-border);
-    }
 
-    &__title {
-        margin: 0;
-        color: var(--tk-color-text-primary);
-        font-size: 16px;
-        font-weight: 600;
-    }
+        .records-filter__title {
+            margin: 0;
+            color: var(--tk-color-text-primary);
+            font-size: 16px;
+            font-weight: 600;
+        }
 
-    &__clear {
-        padding: 0;
-        border: none;
-        background: none;
-        color: var(--tk-color-text-tertiary);
-        font-size: 13px;
-        text-decoration: underline;
-        text-underline-offset: 4px;
-        cursor: pointer;
-        transition: color 0.2s ease;
+        .records-filter__clear {
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--tk-color-text-tertiary);
+            font-size: 13px;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            cursor: pointer;
+            transition: color 0.2s ease;
 
-        &:hover {
-            color: var(--tk-color-primary);
+            &:hover {
+                color: var(--tk-color-primary);
+            }
         }
     }
 
-    &__group {
+    .records-filter__group {
         display: flex;
         flex-direction: column;
         gap: $gap;
@@ -176,61 +176,61 @@ $gap: 15px;
             padding-bottom: 0;
             border-bottom: none;
         }
-    }
 
-    &__group-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: $gap;
-    }
+        .records-filter__group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: $gap;
 
-    &__group-title {
-        margin: 0;
-        color: var(--tk-color-text-primary);
-        font-size: 15px;
-        font-weight: 500;
-    }
+            .records-filter__group-title {
+                margin: 0;
+                color: var(--tk-color-text-primary);
+                font-size: 15px;
+                font-weight: 500;
+            }
 
-    &__group-mode {
-        color: var(--tk-color-text-tertiary);
-        font-size: 12px;
-    }
-
-    &__options {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    &__option {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 25px;
-        padding: 0 10px;
-        border: 1px solid var(--tk-color-border);
-        border-radius: var(--radius-small);
-        background: transparent;
-        color: var(--tk-color-text-secondary);
-        font-size: 12px;
-        line-height: 1;
-        cursor: pointer;
-        transition:
-            border-color 0.2s ease,
-            background-color 0.2s ease,
-            color 0.2s ease;
-
-        &:hover {
-            border-color: var(--tk-color-primary-border);
-            color: var(--tk-color-primary);
+            .records-filter__group-mode {
+                color: var(--tk-color-text-tertiary);
+                font-size: 12px;
+            }
         }
 
-        &.is-active {
-            border-color: var(--tk-color-primary);
-            background: var(--tk-color-primary-subtle);
-            color: var(--tk-color-primary);
-            font-weight: 500;
+        .records-filter__options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+
+            .records-filter__option {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                height: 25px;
+                padding: 0 10px;
+                border: 1px solid var(--tk-color-border);
+                border-radius: var(--radius-small);
+                background: transparent;
+                color: var(--tk-color-text-secondary);
+                font-size: 12px;
+                line-height: 1;
+                cursor: pointer;
+                transition:
+                    border-color 0.2s ease,
+                    background-color 0.2s ease,
+                    color 0.2s ease;
+
+                &:hover {
+                    border-color: var(--tk-color-primary-border);
+                    color: var(--tk-color-primary);
+                }
+
+                &.is-active {
+                    border-color: var(--tk-color-primary);
+                    background: var(--tk-color-primary-subtle);
+                    color: var(--tk-color-primary);
+                    font-weight: 500;
+                }
+            }
         }
     }
 }
