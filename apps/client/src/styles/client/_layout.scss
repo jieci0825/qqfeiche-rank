@@ -111,27 +111,8 @@
     }
 }
 
-.client-contact {
-    display: inline-flex;
-    align-items: center;
+.client-contact > span {
     gap: 6px;
-    padding: 8px 18px;
-    border: 1px solid var(--tk-color-border);
-    border-radius: 8px;
-    background: var(--tk-color-bg-surface);
-    color: var(--tk-color-text-primary);
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-    cursor: pointer;
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease;
-
-    &:hover {
-        border-color: var(--tk-color-border-strong);
-        background: var(--tk-color-bg-hover);
-    }
 }
 
 .client-main {

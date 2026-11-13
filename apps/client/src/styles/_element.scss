@@ -11,10 +11,20 @@
  */
 
 html:root {
+    // 圆角尺寸
+    --radius-small: 4px;
+    --radius-base: 6px;
+    --radius-large: 8px;
+
     // 字体
     --el-font-family:
         -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC',
         'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+
+    // 覆盖 Element Plus 圆角
+    --el-border-radius-small: var(--radius-small);
+    --el-border-radius-base: var(--radius-base);
+    --el-border-radius-round: var(--radius-large);
 
     // 品牌色
     --el-color-primary: var(--tk-color-primary);

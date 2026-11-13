@@ -3,8 +3,17 @@
 // 让 Element Plus 的基础变量跟随 theme-kit 生成的主题。
 // 使用 html:root 提高优先级，避免被按需加载的 Element Plus base.css 覆盖。
 html:root {
+    // 圆角尺寸
+    --radius-small: 4px;
+    --radius-base: 6px;
+    --radius-large: 8px;
+
     --el-font-family: #{$font-family-base};
-    --el-border-radius-base: #{$radius-sm};
+
+    // 覆盖 Element Plus 圆角
+    --el-border-radius-small: var(--radius-small);
+    --el-border-radius-base: var(--radius-base);
+    --el-border-radius-round: var(--radius-large);
 
     --el-color-primary: var(--tk-color-primary);
     --el-color-primary-light-3: var(--tk-primary-400);

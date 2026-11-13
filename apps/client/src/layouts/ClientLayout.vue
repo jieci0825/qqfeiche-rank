@@ -29,10 +29,10 @@ import { Icon } from '@/icons'
                     使用说明
                 </button>
 
-                <button class="client-contact" type="button">
+                <el-button class="client-contact" plain>
                     <Icon icon="ep:user" aria-hidden="true" />
                     联系
-                </button>
+                </el-button>
             </div>
         </header>
 
