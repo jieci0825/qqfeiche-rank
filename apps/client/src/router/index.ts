@@ -15,22 +15,22 @@ const router = createRouter({
                 {
                     path: 'records',
                     name: 'records',
-                    component: () => import('@/views/RecordsView.vue'),
+                    component: () => import('@/views/records/index.vue'),
                 },
                 {
                     path: 'drivers',
                     name: 'drivers',
-                    component: () => import('@/views/DriversView.vue'),
+                    component: () => import('@/views/drivers/index.vue'),
                 },
                 {
                     path: 'teams',
                     name: 'teams',
-                    component: () => import('@/views/TeamsView.vue'),
+                    component: () => import('@/views/teams/index.vue'),
                 },
                 {
                     path: 'stats',
                     name: 'stats',
-                    component: () => import('@/views/StatsView.vue'),
+                    component: () => import('@/views/stats/index.vue'),
                 },
             ],
         },

@@ -9,9 +9,16 @@ const keyword = ref('')
     <section class="records-page">
         <div class="records-page__main">
             <div class="records-search">
-                <el-input v-model="keyword" placeholder="搜索赛道、车手、车队" clearable>
+                <el-input
+                    v-model="keyword"
+                    placeholder="搜索赛道、车手、车队"
+                    clearable
+                >
                     <template #prefix>
-                        <Icon icon="ep:search" aria-hidden="true" />
+                        <Icon
+                            icon="ep:search"
+                            aria-hidden="true"
+                        />
                     </template>
                 </el-input>
             </div>
@@ -19,7 +26,10 @@ const keyword = ref('')
             <div class="records-grid"></div>
         </div>
 
-        <aside class="records-filter" aria-label="筛选栏"></aside>
+        <aside
+            class="records-filter"
+            aria-label="筛选栏"
+        ></aside>
     </section>
 </template>
 
@@ -50,6 +60,7 @@ const keyword = ref('')
 .records-filter {
     flex: 0 0 320px;
     width: 320px;
+    height: 1500px;
     border: 1px solid var(--tk-color-border);
 }
 </style>
