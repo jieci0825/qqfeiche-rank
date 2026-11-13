@@ -13,6 +13,8 @@ const keyword = ref('')
                     v-model="keyword"
                     placeholder="搜索赛道、车手、车队"
                     clearable
+                    size="large"
+                    style="width: 300px"
                 >
                     <template #prefix>
                         <Icon
@@ -34,7 +36,7 @@ const keyword = ref('')
 </template>
 
 <style scoped lang="scss">
-// 记录榜：左侧为搜索栏与自适应宫格，右侧为固定宽度的筛选栏。
+// 记录榜：左侧为搜索栏与自适应宫格，右侧为内容撑开的筛选栏。
 .records-page {
     display: flex;
     flex: 1;
@@ -57,10 +59,13 @@ const keyword = ref('')
     }
 
     .records-filter {
-        flex: 0 0 320px;
         width: 320px;
-        height: 1500px;
+        flex-shrink: 0;
+        flex: 0 0 auto;
+        align-self: flex-start;
+        padding: 20px;
         border: 1px solid var(--tk-color-border);
+        border-radius: var(--radius-base);
     }
 }
 </style>

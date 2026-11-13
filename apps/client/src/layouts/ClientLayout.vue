@@ -203,7 +203,6 @@ import { Icon } from '@/icons'
             max-width: 1280px;
             height: 100%;
             margin: 0 auto;
-            border: 1px solid var(--tk-color-border);
             background: var(--tk-color-bg-surface);
             overflow: hidden;
         }
