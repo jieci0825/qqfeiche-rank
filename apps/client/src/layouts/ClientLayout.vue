@@ -128,10 +128,9 @@ import { Icon } from '@/icons'
 
                 a {
                     padding: 8px 16px;
-                    border-radius: 8px;
+                    border-radius: var(--radius-base);
                     color: var(--tk-color-text-primary);
-                    font-size: 15px;
-                    font-weight: 500;
+                    font-size: 14px;
                     white-space: nowrap;
                     text-decoration: none;
                     transition:

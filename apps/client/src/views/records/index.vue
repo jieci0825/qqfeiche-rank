@@ -1,42 +1,32 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Icon } from '@/icons'
+import RecordsFilter, {
+    type RecordsFilterValue,
+} from './components/RecordsFilter.vue'
+import RecordsGrid from './components/RecordsGrid.vue'
+import RecordsSearch from './components/RecordsSearch.vue'
 
 const keyword = ref('')
+const filter = ref<RecordsFilterValue>({
+    stars: [],
+    scenes: [],
+    distances: [],
+})
 </script>
 
 <template>
     <section class="records-page">
         <div class="records-page__main">
-            <div class="records-search">
-                <el-input
-                    v-model="keyword"
-                    placeholder="搜索赛道、车手、车队"
-                    clearable
-                    size="large"
-                    style="width: 300px"
-                >
-                    <template #prefix>
-                        <Icon
-                            icon="ep:search"
-                            aria-hidden="true"
-                        />
-                    </template>
-                </el-input>
-            </div>
+            <RecordsSearch v-model="keyword" />
 
-            <div class="records-grid"></div>
+            <RecordsGrid />
         </div>
 
-        <aside
-            class="records-filter"
-            aria-label="筛选栏"
-        ></aside>
+        <RecordsFilter v-model="filter" />
     </section>
 </template>
 
 <style scoped lang="scss">
-// 记录榜：左侧为搜索栏与自适应宫格，右侧为内容撑开的筛选栏。
 .records-page {
     display: flex;
     flex: 1;
@@ -48,24 +38,6 @@ const keyword = ref('')
         flex-direction: column;
         gap: 20px;
         min-width: 0;
-
-        .records-grid {
-            display: grid;
-            flex: 1;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-            align-content: start;
-        }
-    }
-
-    .records-filter {
-        width: 320px;
-        flex-shrink: 0;
-        flex: 0 0 auto;
-        align-self: flex-start;
-        padding: 20px;
-        border: 1px solid var(--tk-color-border);
-        border-radius: var(--radius-base);
     }
 }
 </style>
