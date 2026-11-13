@@ -1,6 +1,8 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { ElInfiniteScroll, ElLoading } from 'element-plus'
+import '@fontsource/chakra-petch/700.css'
+import '@fontsource/chakra-petch/700-italic.css'
 import '@/icons'
 import '@/styles/element/manual'
 import '@/styles/index.scss'

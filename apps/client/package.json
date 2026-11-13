@@ -11,6 +11,7 @@
         "theme": "theme-kit generate"
     },
     "dependencies": {
+        "@fontsource/chakra-petch": "^5.3.0",
         "@iconify-json/ep": "catalog:",
         "@iconify/vue": "catalog:",
         "element-plus": "catalog:",
