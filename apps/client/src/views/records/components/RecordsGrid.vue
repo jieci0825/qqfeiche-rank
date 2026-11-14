@@ -455,10 +455,9 @@ $record-font:
                 justify-content: flex-end;
 
                 .record-card__record-value {
-                    // color: var(--tk-color-text-primary);
                     color: var(--tk-color-warning);
                     font-family: $record-font;
-                    font-size: 38px;
+                    font-size: 32px;
                     font-style: italic;
                     font-variant-numeric: tabular-nums;
                     font-weight: 700;

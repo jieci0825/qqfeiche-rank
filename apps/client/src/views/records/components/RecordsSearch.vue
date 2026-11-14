@@ -24,6 +24,6 @@ const keyword = defineModel<string>({ default: '' })
 
 <style scoped lang="scss">
 .records-search {
-    width: 300px;
+    width: 100%;
 }
 </style>

@@ -27,10 +27,6 @@ watch(
 <template>
     <section class="records-page">
         <div class="records-page__main">
-            <div class="records-page__search-panel">
-                <RecordsSearch v-model="keyword" />
-            </div>
-
             <div class="records-page__grid-panel">
                 <div
                     ref="gridViewportRef"
@@ -44,7 +40,10 @@ watch(
             </div>
         </div>
 
-        <RecordsFilter v-model="filter" />
+        <div class="records-page__side">
+            <RecordsSearch v-model="keyword" />
+            <RecordsFilter v-model="filter" />
+        </div>
     </section>
 </template>
 
@@ -66,16 +65,20 @@ $panel-padding: 15px;
         min-height: 0;
     }
 
-    // 搜索区与宫格区各自成面板，边界样式与右侧筛选栏保持一致。
-    .records-page__search-panel,
+    // 右侧区域：搜索框在筛选栏上方，独立元素、不带面板边框。
+    .records-page__side {
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        flex-shrink: 0;
+        gap: $panel-padding;
+        width: 290px;
+    }
+
+    // 宫格区面板边界样式与右侧筛选栏保持一致。
     .records-page__grid-panel {
         border: 1px solid var(--tk-color-border);
         border-radius: var(--radius-base);
-    }
-
-    .records-page__search-panel {
-        flex: 0 0 auto;
-        padding: $panel-padding;
     }
 
     .records-page__grid-panel {
