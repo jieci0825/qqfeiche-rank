@@ -8,13 +8,17 @@ import ClientHeader from './components/ClientHeader.vue'
         <ClientHeader />
 
         <main class="client-main">
-            <RouterView />
+            <div class="client-main__inner">
+                <RouterView />
+            </div>
         </main>
     </div>
 </template>
 
 <style scoped lang="scss">
 .client-app {
+    --client-layout-gutter: 24px;
+
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -28,6 +32,20 @@ import ClientHeader from './components/ClientHeader.vue'
         flex: 1;
         min-height: 0;
         overflow: auto;
+
+        .client-main__inner {
+            width: min(1080px, calc(100% - var(--client-layout-gutter) * 2));
+            min-height: 100%;
+            margin-inline: auto;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        --client-layout-gutter: 20px;
+    }
+
+    @media (max-width: 480px) {
+        --client-layout-gutter: 12px;
     }
 }
 </style>
