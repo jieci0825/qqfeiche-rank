@@ -1,4 +1,1 @@
-// C 端全局样式入口：仅汇总全局公共样式，组件私有样式写在各自 SFC 的 style 中。
-@use './generate/theme';
 @use './reset';
-@use './element';

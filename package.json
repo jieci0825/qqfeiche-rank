@@ -13,8 +13,7 @@
         "dev:server": "turbo dev --filter=@qqfeiche/server",
         "build": "turbo build --filter=@qqfeiche/client --filter=@qqfeiche/admin",
         "typecheck": "turbo typecheck",
-        "start": "pnpm --filter @qqfeiche/server start",
-        "theme": "pnpm --filter @qqfeiche/client theme && pnpm --filter @qqfeiche/admin theme"
+        "start": "pnpm --filter @qqfeiche/server start"
     },
     "devDependencies": {
         "turbo": "^2.11.10"

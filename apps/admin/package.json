@@ -7,8 +7,7 @@
         "dev": "vite",
         "build": "vue-tsc --noEmit && vite build",
         "preview": "vite preview",
-        "typecheck": "vue-tsc --noEmit",
-        "theme": "theme-kit generate"
+        "typecheck": "vue-tsc --noEmit"
     },
     "dependencies": {
         "@iconify-json/ep": "catalog:",
@@ -19,7 +18,6 @@
         "vue-router": "catalog:"
     },
     "devDependencies": {
-        "@coderjc/theme-kit": "catalog:",
         "@types/node": "catalog:",
         "@vitejs/plugin-vue": "catalog:",
         "sass-embedded": "catalog:",

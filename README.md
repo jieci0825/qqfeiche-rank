@@ -23,10 +23,9 @@ qqfeiche-rank/
 - Element Plus 按需引入
 - Sass 样式，统一放在 `client/src/styles`
 - 开发端口：`5173`
-- 页面：`/`（榜单与筛选）、`/tracks/:id`（赛道详情与历史）、`/about`
-- 当前 C 端为示例数据预览，数据集中在 `apps/client/src/data/tracks.ts`，尚未接入业务 API。
-- 支持 1–7 星筛选、赛道 / 车手 / 车队搜索、最近更新排序和分页，筛选条件保存在 URL 中。
-- 视频使用录入的 http(s) 外链，在新标签页打开；未提供地址时展示缺省状态。
+- 页面：`/records`、`/drivers`、`/teams`、`/stats`，`/` 重定向到 `/records`。
+- 当前路由页面已清空，保留 50px header 和 main 布局，等待接入新 UI。
+- 示例数据保留在 `apps/client/src/data/tracks.ts`，尚未接入业务 API。
 
 ### admin：后台管理
 
@@ -37,6 +36,7 @@ qqfeiche-rank/
 - 开发端口：`5174`
 - 访问路径：`http://localhost:5174/admin/`
 - 页面：`/admin`、`/admin/tracks`、`/admin/tags`、`/admin/people`、`/admin/records`、`/admin/records/new`、`/admin/logs`、`/admin/login`
+- 当前路由页面已清空，管理布局仅保留 50px header 和 main 区域。
 
 ### server：服务端
 
@@ -61,7 +61,6 @@ pnpm dev:server    # 只启动服务端
 pnpm build         # 构建 client 和 admin
 pnpm typecheck     # 三个项目分别做类型检查
 pnpm start         # 启动 Fastify，托管两个构建产物
-pnpm theme         # 重新生成两个前端的主题样式
 ```
 
 开发地址：
@@ -124,19 +123,15 @@ import { Icon } from '@/icons'
 
 ## 样式约定
 
-- 每个前端的样式都集中在自己的 `src/styles`，SFC 内部不写 `<style>`。
-- 统一使用 Sass，入口为 `src/styles/index.scss`。
-- `_variables.scss` 提供全局变量、断点和 mixin。
-- `generate/theme.scss` 由 theme-kit 生成，不要手动修改。
-- `_element.scss` 把 Element Plus 的 CSS 变量映射到主题变量。
-- 修改 `theme.config.ts` 后执行 `pnpm theme` 重新生成两端的主题文件。
-- C 端采用扁平深色样式：small / base / large 圆角分别为 4 / 6 / 8px，不使用阴影、发光或拟态效果。
+- 全局公共样式放在各自的 `src/styles`，统一使用 Sass，由 `src/styles/index.scss` 汇总。
+- 组件私有样式放在 SFC 的 `<style scoped lang="scss">` 中，按 DOM 层级嵌套并使用完整类名。
+- 当前全局入口仅保留基础 reset，Element Plus 使用默认样式。
 - `apps/client/public/images` 中的图片裁切自页面设计参考稿，仅用于原型预览，正式上线前应替换为独立原图。
 
 ## 开发说明
 
 - client 与 admin 是两个独立的 Vite 应用，后台使用 `base: '/admin/'`，路由 history 基址与之一致。
 - 开发环境下跨项目链接使用完整的 localhost 地址；生产环境下分别使用 `/` 和 `/admin/`。
-- 后台登录目前只是页面骨架，尚未接入真实鉴权与接口。
+- 后台登录页面已清空，尚未接入真实鉴权与接口。
 - 后台的 `src/stores/auth.ts` 是 Pinia 鉴权状态占位，后续接入登录接口时使用。
 - Node.js 版本要求：`>=22.18.0`。
