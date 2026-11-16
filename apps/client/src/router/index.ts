@@ -18,6 +18,11 @@ const router = createRouter({
                     component: () => import('@/views/records/index.vue'),
                 },
                 {
+                    path: 'tracks',
+                    name: 'tracks',
+                    component: () => import('@/views/tracks/index.vue'),
+                },
+                {
                     path: 'drivers',
                     name: 'drivers',
                     component: () => import('@/views/drivers/index.vue'),

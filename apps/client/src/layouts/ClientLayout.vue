@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import ClientHeader from './components/ClientHeader.vue'
 </script>
 
 <template>
     <div class="client-app">
-        <header class="client-header"></header>
+        <ClientHeader />
 
         <main class="client-main">
             <RouterView />
@@ -18,12 +19,10 @@ import { RouterView } from 'vue-router'
     flex-direction: column;
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
-
-    .client-header {
-        flex: 0 0 50px;
-        height: 50px;
-    }
+    color: var(--tk-color-text);
+    background: var(--tk-color-bg) url('@/assets/record-board/ink-page-background.png') center top / cover no-repeat;
 
     .client-main {
         flex: 1;
