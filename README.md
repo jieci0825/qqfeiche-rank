@@ -23,7 +23,7 @@ qqfeiche-rank/
 - Element Plus 按需引入
 - Sass 样式，统一放在 `client/src/styles`
 - 开发端口：`5173`
-- 页面：`/records`、`/drivers`、`/teams`、`/stats`，`/` 重定向到 `/records`。
+- 页面：`/records`、`/rankings`（国服排行：车手 / 赛车 / 宠物）、`/teams`、`/stats`，`/` 重定向到 `/records`，旧地址 `/drivers` 重定向到 `/rankings`。
 - 当前路由页面已清空，保留 50px header 和 main 布局，等待接入新 UI。
 - 示例数据保留在 `apps/client/src/data/tracks.ts`，尚未接入业务 API。
 

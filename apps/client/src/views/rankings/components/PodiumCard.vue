@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { RankedDriver } from '@/data/drivers'
-import DriverIdentity from './DriverIdentity.vue'
+import type { RankingItem } from '@/data/rankings'
+import RankIdentity from './RankIdentity.vue'
 import RankArtwork from './RankArtwork.vue'
 
 const props = defineProps<{
-    driver: RankedDriver
+    item: RankingItem
     rank: 1 | 2 | 3
 }>()
 const medal = computed(() => ({ 1: 'gold', 2: 'silver', 3: 'bronze' } as const)[props.rank])
@@ -15,7 +15,7 @@ const medal = computed(() => ({ 1: 'gold', 2: 'silver', 3: 'bronze' } as const)[
     <article
         class="podium-card"
         :class="`podium-card--${medal}`"
-        :aria-label="`第 ${rank} 名，${driver.name}，国服数量 ${driver.nationalRecordCount}`"
+        :aria-label="`第 ${rank} 名，${item.name}，国服数量 ${item.nationalRecordCount}`"
     >
         <RankArtwork class="podium-card__background" :name="`podium-${medal}`" eager />
         <div class="podium-card__badge" aria-hidden="true">
@@ -23,7 +23,7 @@ const medal = computed(() => ({ 1: 'gold', 2: 'silver', 3: 'bronze' } as const)[
             <span class="podium-card__rank">{{ rank }}</span>
         </div>
         <div class="podium-card__content">
-            <DriverIdentity :driver="driver" />
+            <RankIdentity :item="item" />
             <div class="podium-card__score">
                 <div class="podium-card__score-label">
                     <RankArtwork class="podium-card__score-divider" :name="`stat-divider-${medal}`" eager />
@@ -31,7 +31,7 @@ const medal = computed(() => ({ 1: 'gold', 2: 'silver', 3: 'bronze' } as const)[
                 </div>
                 <div class="podium-card__score-value">
                     <RankArtwork v-if="rank === 1" class="podium-card__laurels" name="score-laurels" eager />
-                    <strong>{{ driver.nationalRecordCount }}</strong>
+                    <strong>{{ item.nationalRecordCount }}</strong>
                 </div>
             </div>
         </div>
@@ -40,37 +40,37 @@ const medal = computed(() => ({ 1: 'gold', 2: 'silver', 3: 'bronze' } as const)[
 
 <style scoped lang="scss">
 .podium-card {
-    --driver-accent: var(--tk-color-rank-gold);
-    --driver-avatar-size: 18cqw;
-    --driver-identity-gap: 4cqw;
-    --driver-name-size: 9.5cqw;
-    --driver-team-size: 4.6cqw;
-    --driver-team-icon-size: 6cqw;
+    --ranking-accent: var(--tk-color-rank-gold);
+    --ranking-avatar-size: 18cqw;
+    --rank-identity-gap: 4cqw;
+    --ranking-name-size: 9.5cqw;
+    --ranking-team-size: 4.6cqw;
+    --ranking-team-icon-size: 6cqw;
 
     position: relative;
     isolation: isolate;
     container-type: inline-size;
     min-width: 0;
     aspect-ratio: 2 / 1;
-    color: var(--driver-accent);
+    color: var(--ranking-accent);
     text-shadow: 0 2px 5px var(--tk-color-bg);
 
     &.podium-card--gold {
-        --driver-avatar-size: 18.5cqw;
+        --ranking-avatar-size: 18.5cqw;
 
         grid-column: 2;
         grid-row: 1;
     }
 
     &.podium-card--silver {
-        --driver-accent: var(--tk-color-rank-silver);
+        --ranking-accent: var(--tk-color-rank-silver);
 
         grid-column: 1;
         grid-row: 1;
     }
 
     &.podium-card--bronze {
-        --driver-accent: var(--tk-color-rank-bronze);
+        --ranking-accent: var(--tk-color-rank-bronze);
 
         grid-column: 3;
         grid-row: 1;
@@ -172,7 +172,7 @@ const medal = computed(() => ({ 1: 'gold', 2: 'silver', 3: 'bronze' } as const)[
                 .podium-card__score-value {
                     strong {
                         font-size: 18cqw;
-                        text-shadow: 0 0 16px color-mix(in srgb, var(--driver-accent) 45%, transparent);
+                        text-shadow: 0 0 16px color-mix(in srgb, var(--ranking-accent) 45%, transparent);
                     }
                 }
             }
