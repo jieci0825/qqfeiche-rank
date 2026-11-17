@@ -1,0 +1,317 @@
+{
+  "source": "用户提供的车手排行设计截图",
+  "sourceDimensions": [
+    2278,
+    1306
+  ],
+  "method": "PNG: built-in imagegen extraction and reconstruction; SVG: vector drawing",
+  "alphaBoundsThreshold": 8,
+  "assets": [
+    {
+      "id": "podium-gold",
+      "file": "podium-gold.png",
+      "label": "冠军卡片底板",
+      "bytes": 2022214,
+      "format": "png",
+      "width": 1752,
+      "height": 898,
+      "hasTransparency": true,
+      "contentBounds": [
+        29,
+        33,
+        1721,
+        856
+      ],
+      "contentBoundsRatio": [
+        0.016553,
+        0.036748,
+        0.982306,
+        0.953229
+      ]
+    },
+    {
+      "id": "podium-silver",
+      "file": "podium-silver.png",
+      "label": "亚军卡片底板",
+      "bytes": 1855644,
+      "format": "png",
+      "width": 1729,
+      "height": 910,
+      "hasTransparency": true,
+      "contentBounds": [
+        44,
+        57,
+        1685,
+        849
+      ],
+      "contentBoundsRatio": [
+        0.025448,
+        0.062637,
+        0.974552,
+        0.932967
+      ]
+    },
+    {
+      "id": "podium-bronze",
+      "file": "podium-bronze.png",
+      "label": "季军卡片底板",
+      "bytes": 1936315,
+      "format": "png",
+      "width": 1729,
+      "height": 910,
+      "hasTransparency": true,
+      "contentBounds": [
+        37,
+        43,
+        1692,
+        862
+      ],
+      "contentBoundsRatio": [
+        0.0214,
+        0.047253,
+        0.9786,
+        0.947253
+      ]
+    },
+    {
+      "id": "badge-gold",
+      "file": "badge-gold.png",
+      "label": "冠军空白徽章",
+      "bytes": 944489,
+      "format": "png",
+      "width": 1561,
+      "height": 1008,
+      "hasTransparency": true,
+      "contentBounds": [
+        324,
+        89,
+        1239,
+        791
+      ],
+      "contentBoundsRatio": [
+        0.207559,
+        0.088294,
+        0.793722,
+        0.784722
+      ]
+    },
+    {
+      "id": "badge-silver",
+      "file": "badge-silver.png",
+      "label": "亚军空白徽章",
+      "bytes": 1112559,
+      "format": "png",
+      "width": 1561,
+      "height": 1007,
+      "hasTransparency": true,
+      "contentBounds": [
+        264,
+        113,
+        1300,
+        827
+      ],
+      "contentBoundsRatio": [
+        0.169122,
+        0.112214,
+        0.832799,
+        0.821251
+      ]
+    },
+    {
+      "id": "badge-bronze",
+      "file": "badge-bronze.png",
+      "label": "季军空白徽章",
+      "bytes": 1063649,
+      "format": "png",
+      "width": 1561,
+      "height": 1007,
+      "hasTransparency": true,
+      "contentBounds": [
+        229,
+        95,
+        1332,
+        857
+      ],
+      "contentBoundsRatio": [
+        0.146701,
+        0.09434,
+        0.853299,
+        0.851043
+      ]
+    },
+    {
+      "id": "list-card",
+      "file": "list-card.png",
+      "label": "普通排行卡片底板",
+      "bytes": 1009257,
+      "format": "png",
+      "width": 1860,
+      "height": 846,
+      "hasTransparency": true,
+      "contentBounds": [
+        26,
+        204,
+        1833,
+        614
+      ],
+      "contentBoundsRatio": [
+        0.013978,
+        0.241135,
+        0.985484,
+        0.725768
+      ]
+    },
+    {
+      "id": "rank-ring",
+      "file": "rank-ring.png",
+      "label": "普通排名笔刷圆环",
+      "bytes": 631829,
+      "format": "png",
+      "width": 1254,
+      "height": 1254,
+      "hasTransparency": true,
+      "contentBounds": [
+        120,
+        145,
+        1117,
+        1088
+      ],
+      "contentBoundsRatio": [
+        0.095694,
+        0.11563,
+        0.89075,
+        0.867624
+      ]
+    },
+    {
+      "id": "section-divider",
+      "file": "section-divider.png",
+      "label": "赛车旗分隔线",
+      "bytes": 104520,
+      "format": "png",
+      "width": 2115,
+      "height": 744,
+      "hasTransparency": true,
+      "contentBounds": [
+        59,
+        328,
+        2055,
+        398
+      ],
+      "contentBoundsRatio": [
+        0.027896,
+        0.44086,
+        0.971631,
+        0.534946
+      ]
+    },
+    {
+      "id": "title-brush",
+      "file": "title-brush.png",
+      "label": "标题金色笔刷",
+      "bytes": 292208,
+      "format": "png",
+      "width": 2172,
+      "height": 724,
+      "hasTransparency": true,
+      "contentBounds": [
+        65,
+        190,
+        2111,
+        544
+      ],
+      "contentBoundsRatio": [
+        0.029926,
+        0.262431,
+        0.971915,
+        0.751381
+      ]
+    },
+    {
+      "id": "score-laurels",
+      "file": "score-laurels.png",
+      "label": "冠军数值麦穗",
+      "bytes": 414175,
+      "format": "png",
+      "width": 2172,
+      "height": 724,
+      "hasTransparency": true,
+      "contentBounds": [
+        157,
+        144,
+        2016,
+        558
+      ],
+      "contentBoundsRatio": [
+        0.072284,
+        0.198895,
+        0.928177,
+        0.770718
+      ]
+    },
+    {
+      "id": "stat-divider-gold",
+      "file": "stat-divider-gold.svg",
+      "label": "冠军数量标题分隔线",
+      "bytes": 855,
+      "format": "svg",
+      "viewBox": [
+        0.0,
+        0.0,
+        600.0,
+        32.0
+      ],
+      "width": 600,
+      "height": 32,
+      "hasTransparency": true
+    },
+    {
+      "id": "stat-divider-silver",
+      "file": "stat-divider-silver.svg",
+      "label": "亚军数量标题分隔线",
+      "bytes": 855,
+      "format": "svg",
+      "viewBox": [
+        0.0,
+        0.0,
+        600.0,
+        32.0
+      ],
+      "width": 600,
+      "height": 32,
+      "hasTransparency": true
+    },
+    {
+      "id": "stat-divider-bronze",
+      "file": "stat-divider-bronze.svg",
+      "label": "季军数量标题分隔线",
+      "bytes": 855,
+      "format": "svg",
+      "viewBox": [
+        0.0,
+        0.0,
+        600.0,
+        32.0
+      ],
+      "width": 600,
+      "height": 32,
+      "hasTransparency": true
+    },
+    {
+      "id": "count-underline",
+      "file": "count-underline.svg",
+      "label": "车手总数装饰线",
+      "bytes": 626,
+      "format": "svg",
+      "viewBox": [
+        0.0,
+        0.0,
+        400.0,
+        24.0
+      ],
+      "width": 400,
+      "height": 24,
+      "hasTransparency": true
+    }
+  ]
+}
