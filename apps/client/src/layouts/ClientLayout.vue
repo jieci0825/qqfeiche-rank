@@ -26,7 +26,9 @@ import ClientHeader from './components/ClientHeader.vue'
     height: 100dvh;
     overflow: hidden;
     color: var(--tk-color-text);
-    background: var(--tk-color-bg) url('@/assets/record-board/ink-page-background.png') center top / cover no-repeat;
+    background: var(--tk-color-bg)
+        url('@/assets/record-board/ink-page-background.png') center top / cover
+        no-repeat;
 
     .client-main {
         --client-scrollbar-thumb: var(--tk-color-scrollbar-thumb);
@@ -57,7 +59,7 @@ import ClientHeader from './components/ClientHeader.vue'
         }
 
         .client-main__inner {
-            width: min(1080px, calc(100% - var(--client-layout-gutter) * 2));
+            width: min(1180px, calc(100% - var(--client-layout-gutter) * 2));
             min-height: 100%;
             margin-inline: auto;
         }
