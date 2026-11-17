@@ -187,6 +187,8 @@ defineExpose({ open })
 
 <style scoped lang="scss">
 .record-feedback {
+    --tk-radius-feedback: 4px;
+
     .record-feedback__dialog {
         width: min(560px, calc(100vw - 32px));
         max-width: none;
@@ -195,6 +197,7 @@ defineExpose({ open })
         padding: 30px 32px 26px;
         overflow: auto;
         border: 1px solid var(--tk-color-border);
+        border-radius: var(--tk-radius-feedback);
         color: var(--tk-color-text);
         background: color-mix(in srgb, var(--tk-color-bg) 96%, var(--tk-color-primary));
         box-shadow: 0 16px 64px color-mix(in srgb, var(--tk-color-bg) 70%, transparent);
@@ -208,6 +211,7 @@ defineExpose({ open })
         }
 
         button {
+            border-radius: var(--tk-radius-feedback);
             cursor: pointer;
 
             &:focus-visible {
@@ -282,6 +286,7 @@ defineExpose({ open })
                         gap: 10px;
                         padding: 13px 12px;
                         border: 1px solid var(--tk-color-border);
+                        border-radius: var(--tk-radius-feedback);
                         cursor: pointer;
 
                         &.is-selected {
@@ -340,7 +345,7 @@ defineExpose({ open })
                     min-height: 42px;
                     padding: 10px 12px;
                     border: 1px solid var(--tk-color-border);
-                    border-radius: 0;
+                    border-radius: var(--tk-radius-feedback);
                     color: var(--tk-color-text);
                     background: var(--tk-color-bg);
                     font-size: 15px;
@@ -375,7 +380,7 @@ defineExpose({ open })
                     --el-fill-color-blank: var(--tk-color-bg);
                     --el-bg-color-overlay: color-mix(in srgb, var(--tk-color-bg) 96%, var(--tk-color-primary));
                     --el-fill-color-light: color-mix(in srgb, var(--tk-color-primary) 8%, transparent);
-                    --el-border-radius-base: 0;
+                    --el-border-radius-base: var(--tk-radius-feedback);
 
                     width: 100%;
 
@@ -398,7 +403,7 @@ defineExpose({ open })
 
                     :deep(.record-feedback__track-popper) {
                         border: 1px solid var(--tk-color-border);
-                        border-radius: 0;
+                        border-radius: var(--tk-radius-feedback);
                         color: var(--tk-color-text-secondary);
                         background: var(--el-bg-color-overlay);
                         box-shadow: 0 8px 24px color-mix(in srgb, var(--tk-color-bg) 60%, transparent);
@@ -414,6 +419,7 @@ defineExpose({ open })
                         .el-select-dropdown__item {
                             height: 38px;
                             padding-inline: 12px;
+                            border-radius: var(--tk-radius-feedback);
                             color: var(--tk-color-text-secondary);
                             font-size: 15px;
                             line-height: 38px;
