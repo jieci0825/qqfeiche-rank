@@ -5,7 +5,6 @@ import sealUrl from '@/assets/record-board/seal-guofu.svg?url'
 
 const navigationItems = [
     { label: '记录榜单', routeName: 'records' },
-    { label: '赛道大全', routeName: 'tracks' },
     { label: '车手排行', routeName: 'drivers' },
     { label: '关于本站', routeName: 'about' },
 ]
