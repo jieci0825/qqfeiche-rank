@@ -9,11 +9,20 @@
     --tk-color-record-accent: #953b32;
     --tk-color-border: rgb(232 225 207 / 18%);
     --tk-color-header-bg: rgb(12 12 12 / 12%);
-    --tk-color-scrollbar-thumb: color-mix(in srgb, var(--tk-color-text-secondary) 45%, transparent);
-    --tk-color-scrollbar-thumb-hover: color-mix(in srgb, var(--tk-color-text-secondary) 65%, transparent);
+    --tk-color-scrollbar-thumb: color-mix(
+        in srgb,
+        var(--tk-color-text-secondary) 45%,
+        transparent
+    );
+    --tk-color-scrollbar-thumb-hover: color-mix(
+        in srgb,
+        var(--tk-color-text-secondary) 65%,
+        transparent
+    );
     --tk-radius-scrollbar: 999px;
     // 全站字体统一在这里配置，页面和组件通过继承使用。
     --tk-font-family: 'Kaiti SC', 'STKaiti', 'KaiTi', serif;
+    --tk-font-family-numeric: 'Barlow Condensed', 'Arial Narrow', sans-serif;
     --el-font-family: var(--tk-font-family);
 }
 

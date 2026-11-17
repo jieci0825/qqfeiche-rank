@@ -387,6 +387,7 @@ const formattedTime = computed(() => {
 
             .record-card__time {
                 color: var(--tk-color-primary);
+                font-family: var(--tk-font-family-numeric);
                 font-size: 28px;
                 font-weight: 700;
                 line-height: 1.2;
@@ -423,6 +424,7 @@ const formattedTime = computed(() => {
 
                 strong {
                     color: var(--tk-color-record-accent);
+                    font-family: var(--tk-font-family-numeric);
                     font-size: 24px;
                     font-weight: 700;
                     line-height: 1;
@@ -435,6 +437,10 @@ const formattedTime = computed(() => {
                 line-height: 1.4;
                 text-align: center;
                 white-space: nowrap;
+
+                time {
+                    font-family: var(--tk-font-family-numeric);
+                }
             }
         }
     }

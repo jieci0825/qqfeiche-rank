@@ -1,6 +1,8 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { ElInfiniteScroll, ElLoading } from 'element-plus'
+import '@fontsource/barlow-condensed/latin-400.css'
+import '@fontsource/barlow-condensed/latin-700.css'
 import '@/icons'
 import '@/styles/element/manual'
 import '@/styles/index.scss'
