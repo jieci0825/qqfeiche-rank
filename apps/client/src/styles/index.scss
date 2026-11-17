@@ -7,6 +7,9 @@
     --tk-color-nav-text: #e8e2d5;
     --tk-color-primary: #ead5a1;
     --tk-color-record-accent: #953b32;
+    --tk-color-rank-gold: #f5d58c;
+    --tk-color-rank-silver: #e0e5e9;
+    --tk-color-rank-bronze: #e9bd99;
     --tk-color-border: rgb(232 225 207 / 18%);
     --tk-color-header-bg: rgb(12 12 12 / 12%);
     --tk-color-scrollbar-thumb: color-mix(
@@ -20,6 +23,7 @@
         transparent
     );
     --tk-radius-scrollbar: 999px;
+    --tk-radius-avatar: 4px;
     // 全站字体统一在这里配置，页面和组件通过继承使用。
     --tk-font-family: 'Kaiti SC', 'STKaiti', 'KaiTi', serif;
     --tk-font-family-numeric: 'Barlow Condensed', 'Arial Narrow', sans-serif;

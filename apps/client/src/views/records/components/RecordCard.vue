@@ -83,13 +83,6 @@ const formattedTime = computed(() => {
                         <span :title="record.driver.name">{{
                             record.driver.name
                         }}</span>
-                        <Icon
-                            v-if="record.driver.isChampion"
-                            class="record-card__honor"
-                            icon="ep:trophy"
-                            role="img"
-                            aria-label="冠军车手"
-                        />
                     </div>
                     <div class="record-card__team">
                         <FallbackImage
@@ -338,13 +331,6 @@ const formattedTime = computed(() => {
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
-                    }
-
-                    .record-card__honor {
-                        flex: 0 0 14px;
-                        width: 14px;
-                        height: 14px;
-                        color: var(--tk-color-primary);
                     }
                 }
 
