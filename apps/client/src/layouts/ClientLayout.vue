@@ -29,9 +29,32 @@ import ClientHeader from './components/ClientHeader.vue'
     background: var(--tk-color-bg) url('@/assets/record-board/ink-page-background.png') center top / cover no-repeat;
 
     .client-main {
+        --client-scrollbar-thumb: var(--tk-color-scrollbar-thumb);
+
         flex: 1;
         min-height: 0;
         overflow: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--client-scrollbar-thumb) transparent;
+
+        &:hover {
+            --client-scrollbar-thumb: var(--tk-color-scrollbar-thumb-hover);
+        }
+
+        &::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        &::-webkit-scrollbar-track,
+        &::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            border-radius: var(--tk-radius-scrollbar);
+            background: var(--client-scrollbar-thumb);
+        }
 
         .client-main__inner {
             width: min(1080px, calc(100% - var(--client-layout-gutter) * 2));

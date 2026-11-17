@@ -69,7 +69,6 @@ const navigationItems = [
     height: 78px;
     border-bottom: 1px solid var(--tk-color-border);
     background-color: var(--tk-color-header-bg);
-    font-family: var(--tk-font-display);
 
     .client-header__inner {
         display: flex;

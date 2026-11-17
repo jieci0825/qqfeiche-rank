@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { Icon } from '@/icons'
+import { mockTrackRecords } from '@/data/records'
+import type { RecordCategory, TrackLength } from '@/data/records'
+import RecordCard from './components/RecordCard.vue'
 
-type RecordMode = 'all' | 'ranked' | 'pinnacle'
-type TrackLength = 'short' | 'medium' | 'long'
+type RecordMode = 'all' | RecordCategory
 
 const modeOptions: { label: string; value: RecordMode }[] = [
     { label: '全部', value: 'all' },
@@ -35,6 +37,23 @@ const filters = reactive({
     stars: '',
     keyword: '',
 })
+const filteredRecords = computed(() => {
+    const keyword = filters.keyword.normalize('NFKC').trim().toLocaleLowerCase()
+
+    return mockTrackRecords.filter(record => {
+        if (filters.mode !== 'all' && record.category !== filters.mode) return false
+        if (filters.length && record.length !== filters.length) return false
+        if (filters.stars && record.track.stars !== Number(filters.stars)) return false
+
+        const searchText = [record.track.name, record.driver.name, record.team.name]
+            .join(' ').normalize('NFKC').toLocaleLowerCase()
+        return !keyword || searchText.includes(keyword)
+    })
+})
+
+function resetFilters() {
+    Object.assign(filters, { mode: 'all', length: '', stars: '', keyword: '' })
+}
 
 function toggleLength(length: TrackLength) {
     filters.length = filters.length === length ? '' : length
@@ -109,7 +128,9 @@ function handleStarsFocusout(event: FocusEvent) {
     }
 }
 
-onMounted(() => document.addEventListener('pointerdown', handleOutsidePointerdown))
+onMounted(() => {
+    document.addEventListener('pointerdown', handleOutsidePointerdown)
+})
 onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsidePointerdown))
 </script>
 
@@ -245,19 +266,45 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                 />
             </label>
         </section>
+
+        <section class="records-list" aria-label="赛道记录榜单">
+            <header class="records-list__header">
+                <h2 class="records-list__title">赛道记录</h2>
+                <p class="records-list__count" role="status">
+                    <span>共</span>
+                    <span class="records-list__count-value">{{ filteredRecords.length }}</span>
+                    <span>条记录</span>
+                </p>
+            </header>
+            <ul v-if="filteredRecords.length" class="records-list__items">
+                <li v-for="record in filteredRecords" :key="record.id">
+                    <RecordCard
+                        :record="record"
+                    />
+                </li>
+            </ul>
+            <div v-else class="records-list__empty">
+                <Icon icon="ep:search" aria-hidden="true" />
+                <p>没有找到匹配的记录</p>
+                <button type="button" @click="resetFilters">重置筛选</button>
+            </div>
+        </section>
     </div>
 </template>
 
 <style scoped lang="scss">
 .records-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
     padding-block: 32px;
+    font-variant-numeric: lining-nums tabular-nums;
 
     .records-filter {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 28px;
-        font-family: var(--tk-font-display);
         font-size: 16px;
 
         .records-filter__conditions {
@@ -282,7 +329,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                     color: var(--tk-color-text-secondary);
                     background: color-mix(in srgb, var(--tk-color-bg) 35%, transparent);
                     box-shadow: inset 0 0 0 2px var(--tk-color-bg);
-                    font: inherit;
                     cursor: pointer;
                     transform: skewX(-24deg);
                     transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
@@ -344,7 +390,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                     color: var(--tk-color-text-secondary);
                     background: color-mix(in srgb, var(--tk-color-bg) 35%, transparent);
                     box-shadow: inset 0 0 0 2px var(--tk-color-bg);
-                    font: inherit;
                     cursor: pointer;
                     transform: skewX(-24deg);
 
@@ -455,12 +500,98 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                 outline: none;
                 color: var(--tk-color-text);
                 background: transparent;
-                font: inherit;
                 color-scheme: dark;
 
                 &::placeholder {
                     color: var(--tk-color-text-secondary);
                     opacity: 0.7;
+                }
+            }
+        }
+    }
+
+    .records-list {
+        .records-list__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 12px;
+            color: var(--tk-color-text-secondary);
+            font-size: 16px;
+            line-height: 1.5;
+
+            .records-list__title {
+                margin: 0;
+                color: var(--tk-color-text);
+                font: inherit;
+                font-size: 22px;
+                font-weight: 700;
+                line-height: 1.25;
+            }
+
+            .records-list__count {
+                display: inline-flex;
+                align-items: baseline;
+                gap: 4px;
+                margin: 0;
+                line-height: 1;
+                white-space: nowrap;
+
+                .records-list__count-value {
+                    font-weight: 600;
+                }
+            }
+        }
+
+        .records-list__items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+
+            li {
+                min-width: 0;
+            }
+        }
+
+        .records-list__empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 240px;
+            border: 1px solid var(--tk-color-border);
+            color: var(--tk-color-text-secondary);
+            background: color-mix(in srgb, var(--tk-color-bg) 65%, transparent);
+
+            svg {
+                width: 30px;
+                height: 30px;
+            }
+
+            p {
+                margin-block: 16px;
+                font-size: 14px;
+            }
+
+            button {
+                padding: 6px 16px;
+                border: 1px solid var(--tk-color-primary);
+                color: var(--tk-color-primary);
+                background: transparent;
+                font-size: 13px;
+                cursor: pointer;
+
+                &:hover {
+                    background: color-mix(in srgb, var(--tk-color-primary) 10%, transparent);
+                }
+
+                &:focus-visible {
+                    outline: 2px solid var(--tk-color-primary);
+                    outline-offset: 3px;
                 }
             }
         }

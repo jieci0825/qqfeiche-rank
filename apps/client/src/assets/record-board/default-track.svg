@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="240" viewBox="0 0 640 240" fill="none">
+  <title>默认赛道封面</title>
+  <defs>
+    <linearGradient id="sky" x1="320" y1="0" x2="320" y2="240" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#555b60"/>
+      <stop offset="1" stop-color="#24282b"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h640v240H0z"/>
+  <circle cx="479" cy="65" r="34" fill="#d8d0b9" fill-opacity=".38"/>
+  <path fill="#31393d" d="m0 153 76-84 82 90 99-118 112 122 107-72 164 73v76H0v-87Z"/>
+  <path fill="#1b2226" d="m0 204 130-90 103 65 103-78 147 95 94-61 63 46v59H0v-36Z"/>
+  <path fill="#777b77" d="M144 240c33-46 106-58 152-74 54-20 63-32 48-51 39 18 37 40-13 65-29 15-55 31-62 60H144Z"/>
+  <path stroke="#ead5a1" stroke-width="3" stroke-dasharray="17 13" d="M206 240c22-44 76-48 116-71 40-22 46-35 23-54"/>
+  <path stroke="#b5b6aa" stroke-opacity=".25" d="M0 224h107m365-21h168M0 184h46"/>
+</svg>
