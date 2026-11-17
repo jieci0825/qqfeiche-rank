@@ -460,7 +460,28 @@ const formattedTime = computed(() => {
                 grid-column: 1 / -1;
 
                 .record-card__image {
+                    --record-card-image-bottom-mask: linear-gradient(
+                        to bottom,
+                        var(--tk-color-text) 60%,
+                        color-mix(in srgb, var(--tk-color-text) 94%, transparent)
+                            68%,
+                        color-mix(in srgb, var(--tk-color-text) 65%, transparent)
+                            78%,
+                        color-mix(in srgb, var(--tk-color-text) 28%, transparent)
+                            88%,
+                        color-mix(in srgb, var(--tk-color-text) 6%, transparent)
+                            96%,
+                        transparent 100%
+                    );
+
                     flex-basis: 40%;
+                    // 赛道独占一行时，让图片右侧与底部同时淡出到卡片背景。
+                    -webkit-mask-image: var(--record-card-image-mask),
+                        var(--record-card-image-bottom-mask);
+                    -webkit-mask-composite: source-in;
+                    mask-image: var(--record-card-image-mask),
+                        var(--record-card-image-bottom-mask);
+                    mask-composite: intersect;
                 }
 
                 .record-card__track-info {
