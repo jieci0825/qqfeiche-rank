@@ -6,7 +6,7 @@ QQ 飞车手游国服记录榜。仓库采用 pnpm workspace 管理，根目录�
 qqfeiche-rank/
 ├── client/     # C 端（Vue 3 + Vite）
 ├── admin/      # 后台管理（Vue 3 + Vite）
-├── server/     # 服务端（Fastify）
+├── server/     # API 服务端（Koa）
 ├── docs/       # 需求、数据模型、核心流程
 ├── package.json
 └── pnpm-workspace.yaml
@@ -40,13 +40,32 @@ qqfeiche-rank/
 
 ### server：服务端
 
-- Fastify + `@fastify/static`
+- Koa API 服务
 - `GET /api/health`
-- 生产环境同时托管两个前端：
-  - `client/dist` → `/`
-  - `admin/dist` → `/admin/`
-- 开发端口：`3000`
+- 默认监听 `127.0.0.1:3000`，可通过 `HOST` 和 `PORT` 配置
 - 使用 Node 原生 TypeScript 类型剥离运行，不需要额外编译服务端
+
+#### 服务端分层
+
+- `src/index.ts` 装配配置、数据库、认证服务并监听端口，`src/app.ts` 组装 Koa 中间件和路由。
+- `src/modules/auth/auth.routes.ts` 处理 HTTP 输入、Cookie 和响应，`requireAdmin` 可用于其他管理接口的 Bearer 鉴权。
+- `src/modules/auth/auth.service.ts` 编排登录、令牌轮换和登出，只通过 `AuthStore` 访问持久层。密码校验在写事务之外执行，提交时重新确认账号和锁定状态。
+- `src/modules/auth/sqlite-auth.store.ts` 实现 SQLite 查询和写入，`src/db` 负责连接及版本化迁移。
+
+#### 管理员认证
+
+首次启动前需设置环境变量 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`，服务会在空库中创建管理员。已有账号时直接复用数据库中的凭据。数据库默认为 `apps/server/data/qqfeiche.sqlite`，可通过 `DATABASE_PATH` 指定持久化路径。
+
+| 接口 | 请求 | 成功响应 |
+| --- | --- | --- |
+| `POST /api/admin/auth/login` | JSON `{ username, password }` | `200`，签发双令牌 |
+| `POST /api/admin/auth/refresh` | 浏览器携带 Refresh Cookie | `200`，轮换双令牌 |
+| `GET /api/admin/auth/me` | `Authorization: Bearer <accessToken>` | `200`，返回 `{ admin }` |
+| `POST /api/admin/auth/logout` | 可携带 Refresh Cookie 或 Bearer Token | `204`，清除 Cookie 并撤销匹配到的有效会话 |
+
+登录和刷新响应的 JSON 含 `admin`（`id`、`username`、`displayName`）、`accessToken`、`accessExpiresAt` 和 `refreshExpiresAt`。Access Token 保存在前端内存，有效期最多 15 分钟。Refresh Token 由 `admin_refresh` Cookie 下发，设置 `HttpOnly`、`SameSite=Lax`、`Path=/api/admin/auth`，会话从登录起最多持续 7 天。服务端仅保存令牌摘要，每次刷新立即替换当前两个摘要。前端应合并同一会话的并发刷新，并将刷新和登出串行化。
+
+认证错误返回 `{ code, message }`。凭据错误及令牌失效返回 `401`。同一账号连续输错 5 次会锁定 15 分钟，同一来源 IP 在 15 分钟内最多提交 20 次登录，两项限制均返回 `429` 和 `Retry-After`。开发环境默认接受 `http://localhost:5174` 和 `http://127.0.0.1:5174` 发起的认证写请求，可用 `ADMIN_ORIGIN` 指定其他来源。
 
 ## 命令
 
@@ -60,7 +79,7 @@ pnpm dev:admin     # 只启动后台
 pnpm dev:server    # 只启动服务端
 pnpm build         # 构建 client 和 admin
 pnpm typecheck     # 三个项目分别做类型检查
-pnpm start         # 启动 Fastify，托管两个构建产物
+pnpm start         # 启动 Koa API 服务
 ```
 
 开发地址：
@@ -71,14 +90,13 @@ pnpm start         # 启动 Fastify，托管两个构建产物
 
 开发环境下，两个前端的 Vite 都会把 `/api` 代理到 `http://127.0.0.1:3000`。
 
-生产模式：
+## 生产部署
 
-```bash
-pnpm build
-pnpm start
-```
+前端和 API 服务独立部署。
 
-然后访问 `http://localhost:3000/` 和 `http://localhost:3000/admin/`。
+- 使用 `pnpm build` 构建前端。静态站点将 `apps/client/dist` 部署在 `/`，将 `apps/admin/dist` 部署在 `/admin/`。两个 SPA 的页面路由分别回退到各自的 `index.html`。
+- 使用 `pnpm start` 启动 Koa API 服务。生产入口将 `/api/` 请求转发到 Koa，保留原路径，使两套前端均可通过同源路径访问 API。
+- 设置 `NODE_ENV=production`、`ADMIN_ORIGIN=https://<管理端域名>` 和持久化的 `DATABASE_PATH`。由反代终止 TLS 时，让 Koa 仅对受信反代可达，设置 `TRUST_PROXY=1`，并在反代上覆盖 `X-Forwarded-Proto` 和 `X-Forwarded-For`。HTTPS 来源下 Refresh Cookie 自动启用 `Secure`。
 
 ## Element Plus 按需引入
 

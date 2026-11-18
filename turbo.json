@@ -6,6 +6,20 @@
             "cache": false,
             "persistent": true
         },
+        "@qqfeiche/server#dev": {
+            "cache": false,
+            "persistent": true,
+            "passThroughEnv": [
+                "ADMIN_USERNAME",
+                "ADMIN_PASSWORD",
+                "ADMIN_ORIGIN",
+                "DATABASE_PATH",
+                "HOST",
+                "NODE_ENV",
+                "PORT",
+                "TRUST_PROXY"
+            ]
+        },
         "build": {
             "dependsOn": ["^build"],
             "outputs": ["dist/**"]

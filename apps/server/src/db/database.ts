@@ -1,0 +1,49 @@
+import { mkdirSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
+import { authSchema } from './migrations/001-auth.ts'
+
+const migrations = [{ version: 1, sql: authSchema }]
+
+export function openDatabase(path: string): DatabaseSync {
+    if (path !== ':memory:') {
+        mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
+    }
+
+    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true, timeout: 5000 })
+    try {
+        db.exec('PRAGMA journal_mode = WAL')
+        writeTransaction(db, () => {
+            db.exec(`
+                CREATE TABLE IF NOT EXISTS schema_migrations (
+                    version INTEGER PRIMARY KEY,
+                    applied_at TEXT NOT NULL
+                )
+            `)
+            const applied = db.prepare('SELECT 1 FROM schema_migrations WHERE version = ?')
+            const record = db.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)')
+            for (const migration of migrations) {
+                if (applied.get(migration.version)) continue
+
+                db.exec(migration.sql)
+                record.run(migration.version, new Date().toISOString())
+            }
+        })
+        return db
+    } catch (error) {
+        db.close()
+        throw error
+    }
+}
+
+export function writeTransaction<T>(db: DatabaseSync, operation: () => T): T {
+    db.exec('BEGIN IMMEDIATE')
+    try {
+        const result = operation()
+        db.exec('COMMIT')
+        return result
+    } catch (error) {
+        if (db.isTransaction) db.exec('ROLLBACK')
+        throw error
+    }
+}
