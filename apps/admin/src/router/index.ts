@@ -23,6 +23,12 @@ const router = createRouter({
                     meta: { title: '概览' },
                 },
                 {
+                    path: 'profile',
+                    name: 'admin-profile',
+                    component: () => import('@/views/profile/index.vue'),
+                    meta: { title: '个人中心' },
+                },
+                {
                     path: 'tracks',
                     name: 'admin-tracks',
                     component: () => import('@/views/tracks/index.vue'),
