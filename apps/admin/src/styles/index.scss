@@ -2,6 +2,23 @@
 @use 'element-plus/dist/index.css';
 @use './generate/theme.css';
 @use './element/theme' as element-theme;
-@use './admin/layout';
-@use './admin/login';
-@use './admin/tracks';
+
+:root {
+    --tk-radius-small: 4px;
+    --tk-radius-base: 6px;
+    --tk-radius-large: 8px;
+    --tk-font-family: 'Kaiti SC', 'STKaiti', 'KaiTi', serif;
+    --el-font-family: var(--tk-font-family);
+}
+
+html {
+    font-family: var(--tk-font-family);
+}
+
+button,
+input,
+optgroup,
+select,
+textarea {
+    font-family: inherit;
+}

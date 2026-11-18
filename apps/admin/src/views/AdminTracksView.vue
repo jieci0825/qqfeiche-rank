@@ -178,3 +178,61 @@ onBeforeUnmount(() => listRequest?.abort())
         </el-dialog>
     </section>
 </template>
+
+<style scoped lang="scss">
+.admin-tracks {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+
+    .admin-tracks__heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+    }
+
+    .admin-tracks__list {
+        min-width: 0;
+
+        .admin-tracks__toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+
+            :deep(.el-input) {
+                width: min(240px, 100%);
+            }
+
+            :deep(.el-select) {
+                width: 132px;
+            }
+        }
+    }
+
+    .admin-tracks__form {
+        display: grid;
+        gap: 16px;
+
+        .admin-tracks__field {
+            margin-bottom: 0;
+        }
+
+        .admin-tracks__actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+
+    .admin-tracks__error {
+        margin: 0;
+        color: var(--tk-color-error);
+    }
+}
+</style>
