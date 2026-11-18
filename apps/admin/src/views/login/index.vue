@@ -194,7 +194,7 @@ async function submit() {
     min-height: 100vh;
     min-height: 100dvh;
     padding: 40px 7vw;
-    background: var(--tk-color-bg-page) url('../assets/login/landscape.webp')
+    background: var(--tk-color-bg-page) url('@/assets/login/landscape.webp')
         center / cover no-repeat;
     color: var(--tk-color-text-primary);
 
