@@ -60,23 +60,52 @@ qqfeiche-rank/
 | --- | --- | --- |
 | `POST /api/admin/auth/login` | JSON `{ username, password }` | `200`，签发双令牌 |
 | `POST /api/admin/auth/refresh` | 浏览器携带 Refresh Cookie | `200`，轮换双令牌 |
-| `GET /api/admin/auth/me` | `Authorization: Bearer <accessToken>` | `200`，返回 `{ admin }` |
+| `GET /api/admin/auth/me` | `Authorization: Bearer <accessToken>` | `200`，返回 `{ admin, roles, permissions, menus }` |
 | `POST /api/admin/auth/logout` | 可携带 Refresh Cookie 或 Bearer Token | `204`，清除 Cookie 并撤销匹配到的有效会话 |
 
 登录和刷新响应的 JSON 含 `admin`（`id`、`username`、`displayName`）、`accessToken`、`accessExpiresAt` 和 `refreshExpiresAt`。Access Token 保存在前端内存，有效期最多 15 分钟。Refresh Token 由 `admin_refresh` Cookie 下发，设置 `HttpOnly`、`SameSite=Lax`、`Path=/api/admin/auth`，会话从登录起最多持续 7 天。服务端仅保存令牌摘要，每次刷新立即替换当前两个摘要。前端应合并同一会话的并发刷新，并将刷新和登出串行化。
 
 认证错误返回 `{ code, message }`。凭据错误及令牌失效返回 `401`。同一账号连续输错 5 次会锁定 15 分钟，同一来源 IP 在 15 分钟内最多提交 20 次登录，两项限制均返回 `429` 和 `Retry-After`。开发环境默认接受 `http://localhost:9432` 和 `http://127.0.0.1:9432` 发起的认证写请求，可用 `ADMIN_ORIGIN` 指定其他来源。
 
+#### 后台权限管理
+
+管理员通过角色获得权限，多个角色的权限取并集。服务端在每次请求时检查权限，会话无效返回 `401`，权限不足返回 `403`。已有数据库迁移时将 ID 最小的启用账号设为超级管理员，新数据库将首次启动创建的账号设为超级管理员。超级管理员拥有全部已注册的权限。
+
+`/api/admin/auth/me` 的 `roles` 为 `{ id, code, name, description }` 数组，`permissions` 为权限码数组，`menus` 为可见菜单树。每个菜单包含 `id`、`key`、`parentId`、`title`、`path`、`icon`、`sortOrder`、`isVisible`、`permissionCode` 和 `children`。隐藏目录会隐藏整个分支。记录管理、车手管理、赛车管理和宠物管理预置菜单和查看权限，业务接口随各模块实现。
+
+以下路径均以 `/api/admin` 为前缀，请求均携带 Bearer Access Token。
+
+| 方法和路径 | 权限码 | JSON 请求和成功响应 |
+| --- | --- | --- |
+| `GET /users` | `users:read` | 返回 `{ users }`，用户项包含 `roleIds`、`isActive` 和登录时间 |
+| `POST /users` | `users:create` | `{ username, displayName, password }`，返回 `201 { user }` |
+| `PUT /users/:id` | `users:update` | `{ displayName }`，返回 `{ user }` |
+| `POST /users/:id/enable` | `users:enable` | 返回 `{ user }` |
+| `POST /users/:id/disable` | `users:disable` | 返回 `{ user }` |
+| `POST /users/:id/reset-password` | `users:reset-password` | `{ password }`，返回 `204` |
+| `GET /users/assignable-roles` | `users:assign-roles` | 返回 `{ roles }`，供用户角色选择使用 |
+| `PUT /users/:id/roles` | `users:assign-roles` | `{ roleIds }`，替换角色绑定并返回 `{ user }` |
+| `GET /roles` | `roles:read` | 返回 `{ roles }`，角色项包含 `isSystem` 和权限码数组 `permissions` |
+| `POST /roles` | `roles:create` | `{ code, name, description }`，返回 `201 { role }` |
+| `PUT /roles/:id` | `roles:update` | `{ name, description }`，返回 `{ role }` |
+| `DELETE /roles/:id` | `roles:delete` | 返回 `204` |
+| `GET /permissions` | `roles:read` | 返回 `{ permissions }`，每项包含 `code`、`menuId`、`label`、`kind` |
+| `PUT /roles/:id/permissions` | `roles:assign-permissions` | `{ permissions }`，替换权限码并返回 `{ role }` |
+| `GET /menus` | `menus:read` | 返回 `{ menus }`，包含隐藏菜单的完整菜单树 |
+| `PUT /menus/:id` | `menus:update` | `{ title, icon, sortOrder, isVisible }`，返回 `{ menu }` |
+
+用户停用和密码重置会撤销该用户的现有会话。角色仍被绑定时删除返回 `409`。停用最后一个启用的超级管理员或移除其超级管理员角色也返回 `409`。
+
 #### 赛道管理
 
 赛道接口均需要 `Authorization: Bearer <accessToken>`。新增、编辑和归档会写入操作日志，归档后的赛道仍保留在管理列表中。
 
-| 接口 | 用途 |
-| --- | --- |
-| `GET /api/admin/tracks` | 按排序值和名称返回 `{ tracks }` |
-| `POST /api/admin/tracks` | 新增赛道，返回 `{ track }` |
-| `PUT /api/admin/tracks/:id` | 修改赛道，返回 `{ track }` |
-| `POST /api/admin/tracks/:id/archive` | 归档赛道，返回 `204` |
+| 接口 | 权限码 | 用途 |
+| --- | --- | --- |
+| `GET /api/admin/tracks` | `tracks:read` | 按排序值和名称返回 `{ tracks }` |
+| `POST /api/admin/tracks` | `tracks:create` | 新增赛道，返回 `{ track }` |
+| `PUT /api/admin/tracks/:id` | `tracks:update` | 修改赛道，返回 `{ track }` |
+| `POST /api/admin/tracks/:id/archive` | `tracks:archive` | 归档赛道，返回 `204` |
 
 新增和修改接受 JSON `{ name, coverUrl, description, sortOrder }`。封面地址和描述可以为空，排序值为整数且越小越靠前。
 

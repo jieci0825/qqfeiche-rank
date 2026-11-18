@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { writeTransaction } from '../../db/database.ts'
 import { HttpError } from '../../http/errors.ts'
+import type { AuthorizedActor } from '../rbac/rbac.store.ts'
 
 export interface TrackInput {
     name: string
@@ -66,8 +67,9 @@ export function createTrackStore(db: DatabaseSync) {
             return list.all() as unknown as Track[]
         },
 
-        save(input: TrackInput, actor: TrackActor, id?: number) {
+        save(input: TrackInput, actor: AuthorizedActor, id?: number) {
             return writeTransaction(db, () => {
+                const { adminId } = actor.authorize()
                 const before = id === undefined ? null : requireTrack(id)
                 const existing = byName.get(input.name)
                 if (existing && existing.id !== id) {
@@ -79,18 +81,19 @@ export function createTrackStore(db: DatabaseSync) {
                 const after = (id === undefined
                     ? insert.get(name, coverUrl, description, sortOrder, now, now)
                     : update.get(name, coverUrl, description, sortOrder, now, id)) as unknown as Track
-                recordChange(id === undefined ? 'track.create' : 'track.update', actor, before, after)
+                recordChange(id === undefined ? 'track.create' : 'track.update', { adminId, ip: actor.ip }, before, after)
                 return after
             })
         },
 
-        archive(id: number, actor: TrackActor) {
+        archive(id: number, actor: AuthorizedActor) {
             return writeTransaction(db, () => {
+                const { adminId } = actor.authorize()
                 const before = requireTrack(id)
                 if (before.status === 'archived') return
 
                 const after = archive.get(new Date().toISOString(), id) as unknown as Track
-                recordChange('track.archive', actor, before, after)
+                recordChange('track.archive', { adminId, ip: actor.ip }, before, after)
             })
         },
     }

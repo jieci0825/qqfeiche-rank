@@ -1,6 +1,7 @@
 import type Koa from 'koa'
 import { HttpError } from '../../http/errors.ts'
 import { readJsonObject } from '../../http/json-body.ts'
+import type { RbacStore } from '../rbac/rbac.store.ts'
 import { parseCredentials } from './auth.service.ts'
 import type { AuthService, SessionGrant } from './auth.service.ts'
 
@@ -12,7 +13,7 @@ interface AuthEndpoint {
     handle: (ctx: Koa.Context) => void | Promise<void>
 }
 
-export function createAuthRoutes(auth: AuthService, allowedOrigins: ReadonlySet<string>): Koa.Middleware {
+export function createAuthRoutes(auth: AuthService, allowedOrigins: ReadonlySet<string>, rbac: RbacStore): Koa.Middleware {
     const endpoints: Record<string, AuthEndpoint | undefined> = {
         [`${authPath}/login`]: {
             method: 'POST',
@@ -46,7 +47,8 @@ export function createAuthRoutes(auth: AuthService, allowedOrigins: ReadonlySet<
         [`${authPath}/me`]: {
             method: 'GET',
             handle(ctx) {
-                ctx.body = { admin: requireAdmin(ctx, auth) }
+                const admin = requireAdmin(ctx, auth)
+                ctx.body = { admin, ...rbac.getContext(admin.id) }
             },
         },
         [`${authPath}/logout`]: {

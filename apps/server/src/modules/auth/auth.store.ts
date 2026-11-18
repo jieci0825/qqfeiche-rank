@@ -44,7 +44,7 @@ export interface AuthStore {
     // Operations in a transaction run synchronously.
     transaction<T>(operation: () => T): T
     hasAdmin(): boolean
-    createAdmin(username: string, passwordHash: string, now: string): void
+    createInitialAdmin(username: string, passwordHash: string, now: string): void
     findAdmin(username: string): AdminAccount | undefined
     updateLastLogin(adminId: number, now: string): void
     getLoginFailures(adminId: number): LoginFailures | undefined

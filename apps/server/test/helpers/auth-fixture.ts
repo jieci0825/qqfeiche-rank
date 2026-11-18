@@ -11,6 +11,7 @@ import { loadConfig } from '../../src/config.ts'
 import { openDatabase } from '../../src/db/database.ts'
 import { AuthService } from '../../src/modules/auth/auth.service.ts'
 import { createSqliteAuthStore } from '../../src/modules/auth/sqlite-auth.store.ts'
+import { createRbacStore } from '../../src/modules/rbac/rbac.store.ts'
 import { createTrackStore } from '../../src/modules/tracks/tracks.store.ts'
 
 export const credentials = { username: 'integration-admin', password: 'integration-password' }
@@ -43,7 +44,8 @@ export async function startAuthFixture(t: TestContext, env: NodeJS.ProcessEnv = 
     database = db
     const auth = new AuthService(createSqliteAuthStore(db))
     await auth.initializeAdmin(credentials.username, credentials.password)
-    server = createApp({ auth, tracks: createTrackStore(db), adminOrigins, trustProxy }).listen(0, '127.0.0.1')
+    server = createApp({ auth, rbac: createRbacStore(db), tracks: createTrackStore(db), adminOrigins, trustProxy })
+        .listen(0, '127.0.0.1')
     await once(server, 'listening')
     const address = server.address()
     assert.ok(address && typeof address !== 'string')

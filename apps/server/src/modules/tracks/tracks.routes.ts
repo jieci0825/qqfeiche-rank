@@ -3,25 +3,32 @@ import { HttpError } from '../../http/errors.ts'
 import { readJsonObject } from '../../http/json-body.ts'
 import { requireAdmin } from '../auth/auth.routes.ts'
 import type { AuthService } from '../auth/auth.service.ts'
+import type { PermissionCode } from '../rbac/rbac.catalog.ts'
+import { permissionActor } from '../rbac/rbac.guard.ts'
+import type { RbacStore } from '../rbac/rbac.store.ts'
 import type { TrackInput, TrackStore } from './tracks.store.ts'
 
 const tracksPath = '/api/admin/tracks'
 const trackPath = /^\/api\/admin\/tracks\/([1-9]\d*)(\/archive)?$/
 
-export function createTrackRoutes(tracks: TrackStore, auth: AuthService): Koa.Middleware {
+export function createTrackRoutes(tracks: TrackStore, auth: AuthService, rbac: RbacStore): Koa.Middleware {
     return async (ctx, next) => {
         const isCollection = ctx.path === tracksPath
         const match = trackPath.exec(ctx.path)
         if (!isCollection && !match) return next()
 
         ctx.set('Cache-Control', 'no-store')
-        const { id: adminId } = requireAdmin(ctx, auth)
 
         const allowed = isCollection ? ['GET', 'POST'] : [match?.[2] ? 'POST' : 'PUT']
         if (!allowed.includes(ctx.method)) {
+            requireAdmin(ctx, auth)
             ctx.set('Allow', allowed.join(', '))
             throw new HttpError(405, 'METHOD_NOT_ALLOWED', '请求方法不受支持')
         }
+
+        const permission = trackPermission(ctx.method, Boolean(match?.[2]))
+        const actor = permissionActor(ctx, auth, rbac, permission)
+        actor.authorize()
 
         if (ctx.method === 'GET') {
             ctx.body = { tracks: tracks.list() }
@@ -33,7 +40,6 @@ export function createTrackRoutes(tracks: TrackStore, auth: AuthService): Koa.Mi
             throw new HttpError(404, 'TRACK_NOT_FOUND', '赛道不存在')
         }
 
-        const actor = { adminId, ip: ctx.ip }
         if (id !== undefined && match?.[2]) {
             tracks.archive(id, actor)
             ctx.status = 204
@@ -44,6 +50,12 @@ export function createTrackRoutes(tracks: TrackStore, auth: AuthService): Koa.Mi
         ctx.body = { track: tracks.save(input, actor, id) }
         ctx.status = isCollection ? 201 : 200
     }
+}
+
+function trackPermission(method: string, isArchive: boolean): PermissionCode {
+    if (method === 'GET') return 'tracks:read'
+    if (method === 'PUT') return 'tracks:update'
+    return isArchive ? 'tracks:archive' : 'tracks:create'
 }
 
 function parseTrack(body: Record<string, unknown>): TrackInput {

@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { writeTransaction } from '../../db/database.ts'
+import { superAdminRoleCode } from '../rbac/rbac.catalog.ts'
 import type {
     AdminAccount, AdminProfile, AdminSession, AuthAudit, AuthStore, IpLimit, LoginFailures,
 } from './auth.store.ts'
@@ -14,11 +15,15 @@ export function createSqliteAuthStore(db: DatabaseSync): AuthStore {
             return Boolean(db.prepare('SELECT 1 FROM admins LIMIT 1').get())
         },
 
-        createAdmin(username, passwordHash, now) {
-            db.prepare(`
+        createInitialAdmin(username, passwordHash, now) {
+            const { lastInsertRowid } = db.prepare(`
                 INSERT INTO admins (username, password_hash, display_name, created_at)
                 VALUES (?, ?, ?, ?)
             `).run(username, passwordHash, username, now)
+            db.prepare(`
+                INSERT INTO admin_roles (admin_id, role_id)
+                VALUES (?, (SELECT id FROM roles WHERE code = ?))
+            `).run(lastInsertRowid, superAdminRoleCode)
         },
 
         findAdmin(username) {

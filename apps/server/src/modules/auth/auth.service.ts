@@ -27,12 +27,16 @@ type LoginFailure =
     | { code: 'ACCOUNT_LOCKED' | 'LOGIN_RATE_LIMITED'; retryAfter: number }
 
 export function parseCredentials(username: unknown, password: unknown): Credentials | undefined {
-    if (typeof username !== 'string' || typeof password !== 'string') return undefined
+    if (typeof username !== 'string' || !isValidPassword(password)) return undefined
 
     const name = username.trim()
-    if (!name || name.length > 64 || !password || password.length > 256) return undefined
+    if (!name || name.length > 64) return undefined
 
     return { username: name, password }
+}
+
+export function isValidPassword(value: unknown): value is string {
+    return typeof value === 'string' && value.length > 0 && value.length <= 256
 }
 
 export class AuthService {
@@ -53,7 +57,7 @@ export class AuthService {
         const passwordHash = await hashPassword(credentials.password)
         this.store.transaction(() => {
             if (!this.store.hasAdmin()) {
-                this.store.createAdmin(credentials.username, passwordHash, new Date().toISOString())
+                this.store.createInitialAdmin(credentials.username, passwordHash, new Date().toISOString())
             }
         })
     }

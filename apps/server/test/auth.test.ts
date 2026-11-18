@@ -67,7 +67,16 @@ test('登录签发双令牌，刷新轮换令牌，登出撤销会话', async t 
 
     const profile = await api.me(first.accessToken)
     assert.equal(profile.status, 200)
-    assert.deepEqual(await profile.json(), { admin })
+    const context = await profile.json() as {
+        admin: typeof admin
+        roles: { code: string }[]
+        permissions: string[]
+        menus: { title: string }[]
+    }
+    assert.deepEqual(context.admin, admin)
+    assert.deepEqual(context.roles.map(role => role.code), ['super-admin'])
+    assert.ok(context.permissions.includes('tracks:archive'))
+    assert.deepEqual(context.menus.map(menu => menu.title), ['数据管理', '记录管理', '权限管理'])
     await expectFailure(await api.me(first.refreshToken), 401, 'INVALID_SESSION')
     await expectFailure(await api.refresh(`admin_refresh=${first.accessToken}`), 401, 'INVALID_SESSION')
 
@@ -81,7 +90,7 @@ test('登录签发双令牌，刷新轮换令牌，登出撤销会话', async t 
     await expectFailure(await api.refresh(first.cookie), 401, 'INVALID_SESSION')
     const refreshedProfile = await api.me(next.accessToken)
     assert.equal(refreshedProfile.status, 200)
-    assert.deepEqual(await refreshedProfile.json(), { admin })
+    assert.deepEqual(await refreshedProfile.json(), context)
 
     const logout = await api.post('/logout', { headers: { cookie: next.cookie } })
     assert.equal(logout.status, 204)

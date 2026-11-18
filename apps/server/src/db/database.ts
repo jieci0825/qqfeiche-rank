@@ -3,10 +3,12 @@ import { dirname } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { authSchema } from './migrations/001-auth.ts'
 import { trackSchema } from './migrations/002-tracks.ts'
+import { rbacSchema, seedRbac } from './migrations/003-rbac.ts'
 
-const migrations = [
+const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => void }[] = [
     { version: 1, sql: authSchema },
     { version: 2, sql: trackSchema },
+    { version: 3, sql: rbacSchema, seed: seedRbac },
 ]
 
 export function openDatabase(path: string): DatabaseSync {
@@ -30,6 +32,7 @@ export function openDatabase(path: string): DatabaseSync {
                 if (applied.get(migration.version)) continue
 
                 db.exec(migration.sql)
+                migration.seed?.(db)
                 record.run(migration.version, new Date().toISOString())
             }
         })
