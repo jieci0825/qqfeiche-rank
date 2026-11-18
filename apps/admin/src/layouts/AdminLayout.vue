@@ -200,6 +200,11 @@ async function retryMenus() {
     .admin-main {
         min-width: 0;
         padding: 24px clamp(16px, 2.5vw, 36px);
+        background: var(--tk-color-bg-page) url('@/assets/layout/main-ink-landscape.webp') center / 100% 100% no-repeat;
+
+        html.dark & {
+            background-image: none;
+        }
 
         .admin-main__breadcrumb {
             margin-bottom: 24px;
