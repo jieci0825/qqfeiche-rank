@@ -111,11 +111,6 @@ onBeforeUnmount(() => listRequest?.abort())
 
 <template>
     <section class="admin-tracks">
-        <header class="admin-tracks__heading">
-            <h1>赛道管理</h1>
-            <el-button type="primary" :disabled="saving" @click="openEditor()">新增赛道</el-button>
-        </header>
-
         <el-card shadow="never" class="admin-tracks__list">
             <div class="admin-tracks__toolbar">
                 <el-input v-model="search" aria-label="搜索赛道名称" placeholder="搜索赛道名称" clearable />
@@ -125,6 +120,7 @@ onBeforeUnmount(() => listRequest?.abort())
                     <el-option label="已归档" value="archived" />
                 </el-select>
                 <el-button :loading="loading" @click="loadTracks">刷新列表</el-button>
+                <el-button class="admin-tracks__add" type="primary" :disabled="saving" @click="openEditor()">新增赛道</el-button>
             </div>
 
             <p v-if="loadError" class="admin-tracks__error" role="alert">{{ loadError }}</p>
@@ -181,21 +177,7 @@ onBeforeUnmount(() => listRequest?.abort())
 
 <style scoped lang="scss">
 .admin-tracks {
-    display: grid;
-    gap: 16px;
     min-width: 0;
-
-    .admin-tracks__heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-
-        h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-    }
 
     .admin-tracks__list {
         min-width: 0;
@@ -205,6 +187,10 @@ onBeforeUnmount(() => listRequest?.abort())
             flex-wrap: wrap;
             gap: 12px;
             margin-bottom: 12px;
+
+            .admin-tracks__add {
+                margin-inline-start: auto;
+            }
 
             :deep(.el-input) {
                 width: min(240px, 100%);

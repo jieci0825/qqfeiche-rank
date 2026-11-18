@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import { Icon } from '@/icons'
 import { useAuthStore } from '@/stores/auth'
 import AdminHeader from './components/AdminHeader.vue'
@@ -9,13 +9,8 @@ import AdminSidebarItem from './components/AdminSidebarItem.vue'
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
-const dashboard = { name: 'admin-dashboard' }
 const mobileNavExpanded = ref(false)
 const retrying = ref(false)
-const ancestors = computed(() => {
-    const currentPath = route.matched.at(-1)?.path
-    return route.meta.menuTrail?.filter(menu => menu.path !== currentPath) ?? []
-})
 
 async function retryMenus() {
     retrying.value = true
@@ -60,20 +55,6 @@ async function retryMenus() {
         </aside>
 
         <main class="admin-main">
-            <nav v-if="auth.menus && route.name !== dashboard.name" class="admin-main__breadcrumb" aria-label="面包屑导航">
-                <ol>
-                    <li>
-                        <RouterLink :to="dashboard">首页</RouterLink>
-                        <Icon icon="ep:arrow-right" aria-hidden="true" />
-                    </li>
-                    <li v-for="menu in ancestors" :key="menu.id">
-                        <RouterLink v-if="menu.path" :to="menu.path">{{ menu.title }}</RouterLink>
-                        <span v-else>{{ menu.title }}</span>
-                        <Icon icon="ep:arrow-right" aria-hidden="true" />
-                    </li>
-                    <li aria-current="page">{{ route.meta.title }}</li>
-                </ol>
-            </nav>
             <div v-if="auth.menus === null">
                 <p role="alert">菜单加载失败，请重试。</p>
                 <el-button :loading="retrying" @click="retryMenus">重试</el-button>
@@ -204,32 +185,6 @@ async function retryMenus() {
 
         html.dark & {
             background-image: none;
-        }
-
-        .admin-main__breadcrumb {
-            margin-bottom: 24px;
-            color: var(--tk-color-text-secondary);
-            font-size: 14px;
-
-            ol {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                margin: 0;
-                padding: 0;
-                list-style: none;
-
-                li {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-
-                    a {
-                        color: inherit;
-                        text-underline-offset: 3px;
-                    }
-                }
-            }
         }
     }
 
