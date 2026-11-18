@@ -154,89 +154,27 @@ onBeforeUnmount(() => listRequest?.abort())
         <el-dialog v-model="editorOpen" :title="editingId === undefined ? '新增赛道' : '编辑赛道'"
             width="min(520px, calc(100% - 32px))" :close-on-click-modal="!saving"
             :close-on-press-escape="!saving" :show-close="!saving">
-            <form class="admin-tracks__form" @submit.prevent="submit">
-                <label class="admin-tracks__field" for="track-name">
-                    赛道名称
-                    <el-input id="track-name" v-model="form.name" maxlength="100" :disabled="saving" />
-                </label>
-                <label class="admin-tracks__field" for="track-sort">
-                    排序值（越小越靠前）
-                    <el-input id="track-sort" v-model="form.sortOrder" type="number" step="1" :disabled="saving" />
-                </label>
-                <label class="admin-tracks__field" for="track-cover">
-                    封面地址
-                    <el-input id="track-cover" v-model="form.coverUrl" maxlength="1500" :disabled="saving" />
-                </label>
-                <label class="admin-tracks__field" for="track-description">
-                    描述
-                    <el-input id="track-description" v-model="form.description" type="textarea"
-                        :rows="3" maxlength="1000" :disabled="saving" />
-                </label>
+            <el-form class="admin-tracks__form" :model="form" label-position="top" :disabled="saving"
+                @submit.prevent="submit">
+                <el-form-item class="admin-tracks__field" label="赛道名称" for="track-name">
+                    <el-input id="track-name" v-model="form.name" maxlength="100" />
+                </el-form-item>
+                <el-form-item class="admin-tracks__field" label="排序值（越小越靠前）" for="track-sort">
+                    <el-input id="track-sort" v-model="form.sortOrder" type="number" step="1" />
+                </el-form-item>
+                <el-form-item class="admin-tracks__field" label="封面地址" for="track-cover">
+                    <el-input id="track-cover" v-model="form.coverUrl" maxlength="1500" />
+                </el-form-item>
+                <el-form-item class="admin-tracks__field" label="描述" for="track-description">
+                    <el-input id="track-description" v-model="form.description" type="textarea" :rows="3"
+                        maxlength="1000" />
+                </el-form-item>
                 <p v-if="saveError" class="admin-tracks__error" role="alert">{{ saveError }}</p>
                 <div class="admin-tracks__actions">
-                    <el-button :disabled="saving" @click="editorOpen = false">取消</el-button>
+                    <el-button @click="editorOpen = false">取消</el-button>
                     <el-button type="primary" native-type="submit" :loading="saving">保存</el-button>
                 </div>
-            </form>
+            </el-form>
         </el-dialog>
     </section>
 </template>
-
-<style scoped lang="scss">
-.admin-tracks {
-    display: grid;
-    gap: 16px;
-    min-width: 0;
-
-    .admin-tracks__heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-
-        h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-    }
-
-    .admin-tracks__list {
-        min-width: 0;
-
-        .admin-tracks__toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 12px;
-
-            :deep(.el-input) {
-                width: min(240px, 100%);
-            }
-
-            :deep(.el-select) {
-                width: 132px;
-            }
-        }
-    }
-
-    .admin-tracks__form {
-        display: grid;
-        gap: 16px;
-
-        .admin-tracks__field {
-            display: grid;
-            gap: 6px;
-        }
-
-        .admin-tracks__actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-    }
-
-    .admin-tracks__error {
-        margin: 0;
-        color: var(--el-color-danger);
-    }
-}
-</style>

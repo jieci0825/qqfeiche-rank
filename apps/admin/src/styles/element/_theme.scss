@@ -1,0 +1,66 @@
+$status-colors: (
+    primary: primary,
+    success: success,
+    warning: warning,
+    danger: error,
+    error: error,
+    info: info,
+);
+
+:root,
+html.dark {
+    --el-bg-color: var(--tk-color-bg-surface);
+    --el-bg-color-page: var(--tk-color-bg-page);
+    --el-bg-color-overlay: var(--tk-color-bg-elevated);
+    --el-fill-color-blank: var(--tk-color-bg-surface);
+    --el-fill-color-extra-light: var(--tk-color-bg-page);
+    --el-fill-color-lighter: var(--tk-color-bg-page);
+    --el-fill-color-light: var(--tk-color-bg-hover);
+    --el-fill-color: var(--tk-color-bg-hover);
+    --el-fill-color-dark: var(--tk-color-bg-active);
+    --el-fill-color-darker: var(--tk-color-bg-active);
+    --el-text-color-primary: var(--tk-color-text-primary);
+    --el-text-color-regular: var(--tk-color-text-primary);
+    --el-text-color-secondary: var(--tk-color-text-secondary);
+    --el-text-color-placeholder: var(--tk-color-text-tertiary);
+    --el-text-color-disabled: var(--tk-color-text-disabled);
+    --el-border-color: var(--tk-color-border);
+    --el-border-color-light: var(--tk-color-border-disabled);
+    --el-border-color-lighter: var(--tk-color-border-disabled);
+    --el-border-color-extra-light: var(--tk-color-border-disabled);
+    --el-border-color-dark: var(--tk-color-border-strong);
+    --el-border-color-darker: var(--tk-color-border-strong);
+    --el-border-color-hover: var(--tk-color-border-strong);
+    --el-disabled-bg-color: var(--tk-color-bg-disabled);
+    --el-disabled-text-color: var(--tk-color-text-disabled);
+    --el-disabled-border-color: var(--tk-color-border-disabled);
+    --el-overlay-color-lighter: var(--tk-color-bg-mask);
+
+    @each $type, $token in $status-colors {
+        --el-color-#{$type}: var(--tk-color-#{$token});
+        --el-color-#{$type}-dark-2: var(--tk-color-#{$token}-active);
+        --el-color-#{$type}-light-8: var(--tk-color-#{$token}-border);
+        --el-color-#{$type}-light-9: var(--tk-color-#{$token}-subtle);
+
+        @each $level in (3, 5, 7) {
+            --el-color-#{$type}-light-#{$level}: color-mix(
+                in srgb,
+                var(--tk-color-#{$token}),
+                var(--tk-color-bg-surface) #{$level * 10%}
+            );
+        }
+    }
+}
+
+@each $type, $token in $status-colors {
+    .el-button--#{$type}:not(.is-link, .is-text, .is-plain, .is-dashed) {
+        --el-button-text-color: var(--tk-color-on-#{$token});
+        --el-button-hover-text-color: var(--tk-color-on-#{$token});
+        --el-button-active-text-color: var(--tk-color-on-#{$token});
+        --el-button-hover-bg-color: var(--tk-color-#{$token}-hover);
+        --el-button-hover-border-color: var(--tk-color-#{$token}-hover);
+        --el-button-disabled-bg-color: var(--tk-color-bg-disabled);
+        --el-button-disabled-text-color: var(--tk-color-text-disabled);
+        --el-button-disabled-border-color: var(--tk-color-border-disabled);
+    }
+}

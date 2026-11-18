@@ -1,0 +1,34 @@
+.admin-login {
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    padding: 24px;
+    background: var(--tk-color-bg-page);
+    color: var(--tk-color-text-primary);
+
+    .admin-login__card {
+        width: 100%;
+        max-width: 400px;
+        --el-card-padding: 28px;
+
+        h1 {
+            margin: 0 0 24px;
+            font-size: 24px;
+        }
+
+        .admin-login__form {
+            display: grid;
+            gap: 16px;
+
+            .admin-login__field {
+                margin-bottom: 0;
+            }
+
+            .admin-login__error {
+                margin: 0;
+                color: var(--tk-color-error);
+                font-size: 14px;
+            }
+        }
+    }
+}
