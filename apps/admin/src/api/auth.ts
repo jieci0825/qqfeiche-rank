@@ -11,6 +11,15 @@ export interface AdminSession {
     accessToken: string
 }
 
+export interface AdminMenu {
+    id: number
+    key: string
+    title: string
+    path: string | null
+    icon: string | null
+    children: AdminMenu[]
+}
+
 export interface Credentials {
     username: string
     password: string

@@ -1,12 +1,13 @@
 import { computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import { postAuth } from '@/api/auth'
-import type { AdminSession, Credentials } from '@/api/auth'
+import type { AdminMenu, AdminSession, Credentials } from '@/api/auth'
 import { ApiError, readApiResponse, requestApi } from '@/api/http'
 import type { AdminApiPath, ApiOptions } from '@/api/http'
 
 export const useAuthStore = defineStore('auth', () => {
     const session = shallowRef<AdminSession | null>(null)
+    const menus = shallowRef<AdminMenu[] | null>(null)
     const admin = computed(() => session.value?.admin ?? null)
     const isLoggedIn = computed(() => session.value !== null)
     let sessionVersion = 0
@@ -14,16 +15,30 @@ export const useAuthStore = defineStore('auth', () => {
     let pendingLogin: Promise<void> | undefined
     let pendingRefresh: Promise<void> | undefined
     let pendingLogout: Promise<void> | undefined
+    let pendingMenus: Promise<void> | undefined
+
+    function setSession(grant: AdminSession | null) {
+        sessionVersion++
+        session.value = grant
+        menus.value = null
+        pendingMenus = undefined
+    }
 
     function clearSession() {
-        sessionVersion++
-        session.value = null
+        setSession(null)
     }
 
     function refresh() {
         if (!pendingRefresh) {
             pendingRefresh = postAuth<AdminSession>('refresh')
-                .then(grant => { session.value = grant })
+                .then(grant => {
+                    // 其他标签页可能已切换账号，旧页面的请求和菜单不能沿用新账号的会话。
+                    if (session.value && session.value.admin.id !== grant.admin.id) {
+                        clearSession()
+                        return
+                    }
+                    session.value = grant
+                })
                 .catch(clearSession)
                 .finally(() => {
                     sessionChecked = true
@@ -45,8 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
             await pendingLogout?.catch(() => undefined)
             await pendingRefresh
             const grant = await postAuth<AdminSession>('login', credentials)
-            sessionVersion++
-            session.value = grant
+            setSession(grant)
             sessionChecked = true
         })().finally(() => { pendingLogin = undefined })
         return pendingLogin
@@ -93,5 +107,21 @@ export const useAuthStore = defineStore('auth', () => {
         return readApiResponse<T>(retry)
     }
 
-    return { admin, isLoggedIn, restoreSession, login, logout, request }
+    async function loadMenus() {
+        if (menus.value !== null) return
+
+        if (!pendingMenus) {
+            const version = sessionVersion
+            pendingMenus = request<{ menus: AdminMenu[] }>('/api/admin/auth/me', { signal: AbortSignal.timeout(15_000) })
+                .then(context => {
+                    if (version === sessionVersion && !pendingLogout) menus.value = context.menus
+                })
+                .finally(() => {
+                    if (version === sessionVersion) pendingMenus = undefined
+                })
+        }
+        return pendingMenus
+    }
+
+    return { admin, isLoggedIn, menus, restoreSession, login, logout, request, loadMenus }
 })

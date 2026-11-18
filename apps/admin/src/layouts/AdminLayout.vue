@@ -1,26 +1,30 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { computed, ref } from 'vue'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { Icon } from '@/icons'
 import { useAuthStore } from '@/stores/auth'
 import AdminHeader from './components/AdminHeader.vue'
+import AdminSidebarItem from './components/AdminSidebarItem.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 const dashboard = { name: 'admin-dashboard' }
-const tracks = { name: 'admin-tracks' }
-const eventsTitle = '赛事管理'
-const eventsExpanded = ref(true)
 const mobileNavExpanded = ref(false)
-const upcomingSections = [
-    { label: '用户管理', icon: 'ep:user' },
-    { label: '数据统计', icon: 'ep:histogram' },
-    { label: '系统设置', icon: 'ep:setting' },
-]
-
-watch(() => route.name, name => {
-    if (name === tracks.name) eventsExpanded.value = true
+const retrying = ref(false)
+const ancestors = computed(() => {
+    const currentPath = route.matched.at(-1)?.path
+    return route.meta.menuTrail?.filter(menu => menu.path !== currentPath) ?? []
 })
+
+async function retryMenus() {
+    retrying.value = true
+    try {
+        await router.replace({ path: route.path, query: route.query, hash: route.hash, force: true })
+    } finally {
+        retrying.value = false
+    }
+}
 </script>
 
 <template>
@@ -29,6 +33,7 @@ watch(() => route.name, name => {
 
         <aside class="admin-sidebar">
             <button
+                v-if="auth.menus?.length"
                 type="button"
                 class="admin-sidebar__item admin-sidebar__toggle"
                 :aria-expanded="mobileNavExpanded"
@@ -44,69 +49,36 @@ watch(() => route.name, name => {
                 />
             </button>
             <nav
+                v-if="auth.menus?.length"
                 id="admin-sidebar-nav"
                 class="admin-sidebar__nav"
                 :class="{ 'is-expanded': mobileNavExpanded }"
                 aria-label="后台导航"
             >
-                <RouterLink class="admin-sidebar__item" :to="dashboard">
-                    <Icon icon="ep:house" aria-hidden="true" />
-                    首页
-                </RouterLink>
-                <div class="admin-sidebar__group">
-                    <button
-                        type="button"
-                        class="admin-sidebar__item"
-                        :aria-expanded="eventsExpanded"
-                        aria-controls="admin-sidebar-events"
-                        @click="eventsExpanded = !eventsExpanded"
-                    >
-                        <Icon icon="ep:trophy" aria-hidden="true" />
-                        {{ eventsTitle }}
-                        <Icon
-                            class="admin-sidebar__chevron"
-                            :class="{ 'is-expanded': eventsExpanded }"
-                            icon="ep:arrow-right"
-                            aria-hidden="true"
-                        />
-                    </button>
-                    <div v-show="eventsExpanded" id="admin-sidebar-events" class="admin-sidebar__children">
-                        <RouterLink class="admin-sidebar__item admin-sidebar__child" :to="tracks">
-                            国服赛道记录
-                        </RouterLink>
-                        <button type="button" class="admin-sidebar__item admin-sidebar__child" disabled>
-                            车手排行
-                        </button>
-                    </div>
-                </div>
-                <button
-                    v-for="section in upcomingSections"
-                    :key="section.label"
-                    type="button"
-                    class="admin-sidebar__item"
-                    disabled
-                >
-                    <Icon :icon="section.icon" aria-hidden="true" />
-                    {{ section.label }}
-                </button>
+                <AdminSidebarItem v-for="menu in auth.menus" :key="menu.id" :menu="menu" />
             </nav>
         </aside>
 
         <main class="admin-main">
-            <nav v-if="route.name !== dashboard.name" class="admin-main__breadcrumb" aria-label="面包屑导航">
+            <nav v-if="auth.menus && route.name !== dashboard.name" class="admin-main__breadcrumb" aria-label="面包屑导航">
                 <ol>
                     <li>
                         <RouterLink :to="dashboard">首页</RouterLink>
                         <Icon icon="ep:arrow-right" aria-hidden="true" />
                     </li>
-                    <li v-if="route.name === tracks.name">
-                        {{ eventsTitle }}
+                    <li v-for="menu in ancestors" :key="menu.id">
+                        <RouterLink v-if="menu.path" :to="menu.path">{{ menu.title }}</RouterLink>
+                        <span v-else>{{ menu.title }}</span>
                         <Icon icon="ep:arrow-right" aria-hidden="true" />
                     </li>
                     <li aria-current="page">{{ route.meta.title }}</li>
                 </ol>
             </nav>
-            <RouterView />
+            <div v-if="auth.menus === null">
+                <p role="alert">菜单加载失败，请重试。</p>
+                <el-button :loading="retrying" @click="retryMenus">重试</el-button>
+            </div>
+            <RouterView v-else />
         </main>
     </div>
 </template>
@@ -136,7 +108,7 @@ watch(() => route.name, name => {
         background: var(--admin-sidebar-paper) url('@/assets/layout/sidebar-ink-landscape.webp') left bottom / 166% 100% no-repeat;
         color: var(--admin-sidebar-ink);
 
-        .admin-sidebar__item {
+        :deep(.admin-sidebar__item) {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -152,18 +124,11 @@ watch(() => route.name, name => {
             line-height: 1.3;
             text-align: start;
             text-decoration: none;
+            cursor: pointer;
             transition: background-color 140ms ease-out;
 
-            &:where(:not(:disabled)) {
-                cursor: pointer;
-
-                &:hover {
-                    background-color: var(--admin-sidebar-hover);
-                }
-            }
-
-            &:disabled {
-                color: color-mix(in srgb, var(--admin-sidebar-ink) 72%, var(--admin-sidebar-paper));
+            &:hover {
+                background-color: var(--admin-sidebar-hover);
             }
 
             &:focus-visible {
@@ -171,7 +136,7 @@ watch(() => route.name, name => {
                 outline-offset: -2px;
             }
 
-            &.router-link-exact-active {
+            &.is-active {
                 background-color: var(--admin-sidebar-selected);
                 font-weight: 600;
             }
@@ -195,6 +160,10 @@ watch(() => route.name, name => {
                 display: none;
             }
 
+            &.admin-sidebar__expand {
+                width: auto;
+            }
+
             @media (prefers-reduced-motion: reduce) {
                 svg.admin-sidebar__chevron {
                     transition: none;
@@ -207,7 +176,11 @@ watch(() => route.name, name => {
             flex-direction: column;
             gap: 4px;
 
-            .admin-sidebar__group {
+            :deep(.admin-sidebar__entry) {
+                .admin-sidebar__row {
+                    display: flex;
+                }
+
                 .admin-sidebar__children {
                     display: grid;
                     gap: 2px;
@@ -215,7 +188,7 @@ watch(() => route.name, name => {
                     padding-inline-start: 9px;
                     border-inline-start: 1px solid var(--tk-color-border);
 
-                    .admin-sidebar__child {
+                    .admin-sidebar__item {
                         min-height: 40px;
                         font-size: 17px;
                     }
@@ -266,10 +239,8 @@ watch(() => route.name, name => {
             border-bottom: 1px solid var(--tk-color-border);
             background-image: none;
 
-            .admin-sidebar__item {
-                &.admin-sidebar__toggle {
-                    display: flex;
-                }
+            :deep(.admin-sidebar__toggle) {
+                display: flex;
             }
 
             .admin-sidebar__nav {
