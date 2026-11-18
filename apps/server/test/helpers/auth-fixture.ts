@@ -11,10 +11,11 @@ import { loadConfig } from '../../src/config.ts'
 import { openDatabase } from '../../src/db/database.ts'
 import { AuthService } from '../../src/modules/auth/auth.service.ts'
 import { createSqliteAuthStore } from '../../src/modules/auth/sqlite-auth.store.ts'
+import { createTrackStore } from '../../src/modules/tracks/tracks.store.ts'
 
 export const credentials = { username: 'integration-admin', password: 'integration-password' }
 const authPath = '/api/admin/auth'
-const localOrigin = 'http://localhost:5174'
+const localOrigin = 'http://localhost:9432'
 
 export async function startAuthFixture(t: TestContext, env: NodeJS.ProcessEnv = {}) {
     const { adminOrigins, trustProxy } = loadConfig(env)
@@ -42,7 +43,7 @@ export async function startAuthFixture(t: TestContext, env: NodeJS.ProcessEnv = 
     database = db
     const auth = new AuthService(createSqliteAuthStore(db))
     await auth.initializeAdmin(credentials.username, credentials.password)
-    server = createApp({ auth, adminOrigins, trustProxy }).listen(0, '127.0.0.1')
+    server = createApp({ auth, tracks: createTrackStore(db), adminOrigins, trustProxy }).listen(0, '127.0.0.1')
     await once(server, 'listening')
     const address = server.address()
     assert.ok(address && typeof address !== 'string')

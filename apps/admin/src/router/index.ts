@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,6 +14,7 @@ const router = createRouter({
         {
             path: '/',
             component: AdminLayout,
+            meta: { requiresAuth: true },
             children: [
                 {
                     path: '',
@@ -23,7 +25,7 @@ const router = createRouter({
                 {
                     path: 'tracks',
                     name: 'admin-tracks',
-                    component: () => import('@/views/AdminSectionView.vue'),
+                    component: () => import('@/views/AdminTracksView.vue'),
                     meta: { title: '赛道管理' },
                 },
                 {
@@ -64,6 +66,23 @@ const router = createRouter({
         },
     ],
     scrollBehavior: () => ({ top: 0 }),
+})
+
+export function adminDestination(redirect: unknown) {
+    if (typeof redirect === 'string' && redirect.startsWith('/') && !/^\/[\\/]/.test(redirect)) {
+        if (router.resolve(redirect).meta.requiresAuth) return redirect
+    }
+    return { name: 'admin-dashboard' }
+}
+
+router.beforeEach(async to => {
+    const auth = useAuthStore()
+    await auth.restoreSession()
+
+    if (to.meta.requiresAuth && !auth.isLoggedIn) {
+        return { name: 'admin-login', query: { redirect: to.fullPath } }
+    }
+    if (to.name === 'admin-login' && auth.isLoggedIn) return adminDestination(to.query.redirect)
 })
 
 export default router

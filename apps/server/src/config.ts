@@ -2,10 +2,10 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const defaultDatabasePath = fileURLToPath(new URL('../data/qqfeiche.sqlite', import.meta.url))
-const developmentOrigins = ['http://localhost:5174', 'http://127.0.0.1:5174']
+const developmentOrigins = ['http://localhost:9432', 'http://127.0.0.1:9432']
 
 export function loadConfig(env: NodeJS.ProcessEnv) {
-    const port = Number(env.PORT ?? '3000')
+    const port = Number(env.PORT ?? '9433')
     if (!Number.isInteger(port) || port < 1 || port > 65535) {
         throw new Error('PORT 必须是 1 到 65535 之间的整数')
     }

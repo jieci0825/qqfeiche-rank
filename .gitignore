@@ -14,6 +14,7 @@ output
 dist-ssr
 *.local
 package-lock.json
+/apps/server/.env
 /apps/server/data/
 
 # Editor directories and files

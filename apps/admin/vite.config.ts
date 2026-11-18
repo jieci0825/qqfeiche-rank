@@ -6,7 +6,6 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
-    base: '/admin/',
     plugins: [
         vue(),
         AutoImport({
@@ -25,10 +24,11 @@ export default defineConfig({
         },
     },
     server: {
-        port: 5174,
+        port: 9432,
+        strictPort: true,
         proxy: {
             '/api': {
-                target: 'http://127.0.0.1:3000',
+                target: 'http://127.0.0.1:9433',
                 changeOrigin: true,
             },
         },

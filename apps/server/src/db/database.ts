@@ -2,8 +2,12 @@ import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { authSchema } from './migrations/001-auth.ts'
+import { trackSchema } from './migrations/002-tracks.ts'
 
-const migrations = [{ version: 1, sql: authSchema }]
+const migrations = [
+    { version: 1, sql: authSchema },
+    { version: 2, sql: trackSchema },
+]
 
 export function openDatabase(path: string): DatabaseSync {
     if (path !== ':memory:') {

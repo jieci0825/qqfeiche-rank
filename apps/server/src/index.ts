@@ -1,17 +1,25 @@
 import { once } from 'node:events'
+import { loadEnvFile } from 'node:process'
 import { createApp } from './app.ts'
 import { loadConfig } from './config.ts'
 import { openDatabase } from './db/database.ts'
 import { AuthService } from './modules/auth/auth.service.ts'
 import { createSqliteAuthStore } from './modules/auth/sqlite-auth.store.ts'
+import { createTrackStore } from './modules/tracks/tracks.store.ts'
 
 async function main(): Promise<void> {
+    try {
+        loadEnvFile(new URL('../.env', import.meta.url))
+    } catch (error) {
+        if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
+    }
+
     const { host, port, databasePath, adminUsername, adminPassword, adminOrigins, trustProxy } = loadConfig(process.env)
     const db = openDatabase(databasePath)
     try {
         const auth = new AuthService(createSqliteAuthStore(db))
         await auth.initializeAdmin(adminUsername, adminPassword)
-        const app = createApp({ auth, adminOrigins, trustProxy })
+        const app = createApp({ auth, tracks: createTrackStore(db), adminOrigins, trustProxy })
         const server = app.listen(port, host)
         await once(server, 'listening')
         console.info(`API 服务已启动，监听 ${host}:${port}`)

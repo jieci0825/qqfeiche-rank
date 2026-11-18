@@ -22,7 +22,7 @@ qqfeiche-rank/
 - Vue Router、Pinia
 - Element Plus 按需引入
 - Sass 样式，统一放在 `client/src/styles`
-- 开发端口：`5173`
+- 开发端口：`9431`
 - 页面：`/records`、`/rankings`（国服排行：车手 / 赛车 / 宠物）、`/teams`、`/stats`，`/` 重定向到 `/records`，旧地址 `/drivers` 重定向到 `/rankings`。
 - 当前路由页面已清空，保留 50px header 和 main 布局，等待接入新 UI。
 - 示例数据保留在 `apps/client/src/data/tracks.ts`，尚未接入业务 API。
@@ -33,16 +33,16 @@ qqfeiche-rank/
 - Vue Router、Pinia
 - Element Plus 按需引入
 - Sass 样式，统一放在 `admin/src/styles`
-- 开发端口：`5174`
-- 访问路径：`http://localhost:5174/admin/`
-- 页面：`/admin`、`/admin/tracks`、`/admin/tags`、`/admin/people`、`/admin/records`、`/admin/records/new`、`/admin/logs`、`/admin/login`
-- 当前路由页面已清空，管理布局仅保留 50px header 和 main 区域。
+- 开发端口：`9432`
+- 访问地址：`http://localhost:9432/`
+- 页面：`/`、`/tracks`、`/tags`、`/people`、`/records`、`/records/new`、`/logs`、`/login`
+- 登录后可进入概览和赛道管理。赛道管理支持搜索、状态筛选、新增、编辑、排序和归档。
 
 ### server：服务端
 
 - Koa API 服务
 - `GET /api/health`
-- 默认监听 `127.0.0.1:3000`，可通过 `HOST` 和 `PORT` 配置
+- 默认监听 `127.0.0.1:9433`，可通过 `HOST` 和 `PORT` 配置
 - 使用 Node 原生 TypeScript 类型剥离运行，不需要额外编译服务端
 
 #### 服务端分层
@@ -54,7 +54,7 @@ qqfeiche-rank/
 
 #### 管理员认证
 
-首次启动前需设置环境变量 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`，服务会在空库中创建管理员。已有账号时直接复用数据库中的凭据。数据库默认为 `apps/server/data/qqfeiche.sqlite`，可通过 `DATABASE_PATH` 指定持久化路径。
+本地首次启动前，在 `apps/server/.env` 中设置 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`。服务端启动时自动读取此文件，已设置的进程环境变量优先。服务会在空库中创建管理员，已有账号时直接复用数据库中的凭据。数据库默认为 `apps/server/data/qqfeiche.sqlite`，可通过 `DATABASE_PATH` 指定持久化路径。
 
 | 接口 | 请求 | 成功响应 |
 | --- | --- | --- |
@@ -65,7 +65,20 @@ qqfeiche-rank/
 
 登录和刷新响应的 JSON 含 `admin`（`id`、`username`、`displayName`）、`accessToken`、`accessExpiresAt` 和 `refreshExpiresAt`。Access Token 保存在前端内存，有效期最多 15 分钟。Refresh Token 由 `admin_refresh` Cookie 下发，设置 `HttpOnly`、`SameSite=Lax`、`Path=/api/admin/auth`，会话从登录起最多持续 7 天。服务端仅保存令牌摘要，每次刷新立即替换当前两个摘要。前端应合并同一会话的并发刷新，并将刷新和登出串行化。
 
-认证错误返回 `{ code, message }`。凭据错误及令牌失效返回 `401`。同一账号连续输错 5 次会锁定 15 分钟，同一来源 IP 在 15 分钟内最多提交 20 次登录，两项限制均返回 `429` 和 `Retry-After`。开发环境默认接受 `http://localhost:5174` 和 `http://127.0.0.1:5174` 发起的认证写请求，可用 `ADMIN_ORIGIN` 指定其他来源。
+认证错误返回 `{ code, message }`。凭据错误及令牌失效返回 `401`。同一账号连续输错 5 次会锁定 15 分钟，同一来源 IP 在 15 分钟内最多提交 20 次登录，两项限制均返回 `429` 和 `Retry-After`。开发环境默认接受 `http://localhost:9432` 和 `http://127.0.0.1:9432` 发起的认证写请求，可用 `ADMIN_ORIGIN` 指定其他来源。
+
+#### 赛道管理
+
+赛道接口均需要 `Authorization: Bearer <accessToken>`。新增、编辑和归档会写入操作日志，归档后的赛道仍保留在管理列表中。
+
+| 接口 | 用途 |
+| --- | --- |
+| `GET /api/admin/tracks` | 按排序值和名称返回 `{ tracks }` |
+| `POST /api/admin/tracks` | 新增赛道，返回 `{ track }` |
+| `PUT /api/admin/tracks/:id` | 修改赛道，返回 `{ track }` |
+| `POST /api/admin/tracks/:id/archive` | 归档赛道，返回 `204` |
+
+新增和修改接受 JSON `{ name, coverUrl, description, sortOrder }`。封面地址和描述可以为空，排序值为整数且越小越靠前。
 
 ## 命令
 
@@ -84,17 +97,17 @@ pnpm start         # 启动 Koa API 服务
 
 开发地址：
 
-- C 端：http://localhost:5173/
-- 后台：http://localhost:5174/admin/
-- 接口：http://localhost:3000/api/health
+- C 端：http://localhost:9431/
+- 后台：http://localhost:9432/
+- 接口：http://127.0.0.1:9433/api/health
 
-开发环境下，两个前端的 Vite 都会把 `/api` 代理到 `http://127.0.0.1:3000`。
+开发环境下，两个前端的 Vite 都会把 `/api` 代理到 `http://127.0.0.1:9433`。
 
 ## 生产部署
 
 前端和 API 服务独立部署。
 
-- 使用 `pnpm build` 构建前端。静态站点将 `apps/client/dist` 部署在 `/`，将 `apps/admin/dist` 部署在 `/admin/`。两个 SPA 的页面路由分别回退到各自的 `index.html`。
+- 使用 `pnpm build` 构建前端。将 `apps/client/dist` 和 `apps/admin/dist` 分别部署到各自站点的根路径 `/`，页面路由回退到所在站点的 `index.html`。
 - 使用 `pnpm start` 启动 Koa API 服务。生产入口将 `/api/` 请求转发到 Koa，保留原路径，使两套前端均可通过同源路径访问 API。
 - 设置 `NODE_ENV=production`、`ADMIN_ORIGIN=https://<管理端域名>` 和持久化的 `DATABASE_PATH`。由反代终止 TLS 时，让 Koa 仅对受信反代可达，设置 `TRUST_PROXY=1`，并在反代上覆盖 `X-Forwarded-Proto` 和 `X-Forwarded-For`。HTTPS 来源下 Refresh Cookie 自动启用 `Secure`。
 
@@ -148,8 +161,6 @@ import { Icon } from '@/icons'
 
 ## 开发说明
 
-- client 与 admin 是两个独立的 Vite 应用，后台使用 `base: '/admin/'`，路由 history 基址与之一致。
-- 开发环境下跨项目链接使用完整的 localhost 地址；生产环境下分别使用 `/` 和 `/admin/`。
-- 后台登录页面已清空，尚未接入真实鉴权与接口。
-- 后台的 `src/stores/auth.ts` 是 Pinia 鉴权状态占位，后续接入登录接口时使用。
+- client 与 admin 是两个独立的 Vite 应用，页面路由从各自站点的根路径 `/` 开始。跨站链接使用目标站点的完整地址。
+- 后台的 `src/stores/auth.ts` 在内存中保存管理员资料和 Access Token，统一处理会话恢复、并发续签和登出。
 - Node.js 版本要求：`>=22.18.0`。
