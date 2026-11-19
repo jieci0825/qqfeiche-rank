@@ -1,20 +1,38 @@
 <script setup lang="ts">
-import { reactive, ref, shallowRef } from 'vue'
+import { computed, reactive, ref, shallowRef } from 'vue'
 import { ElMessage } from 'element-plus'
 import { apiErrorMessage, listMenus, updateMenu, type AdminMenu } from '@/api'
-import { Icon } from '@/icons'
 import { useAuthStore } from '@/stores/auth'
 import ManagementDialog from '../access/ManagementDialog.vue'
-import ManagementTable from '../access/ManagementTable.vue'
 import { useManagementList } from '../access/use-management-list'
+import MenuTreeItem from './MenuTreeItem.vue'
 
 const auth = useAuthStore()
 const menus = useManagementList(async signal => (await listMenus(signal)).menus)
+const search = ref('')
 const editingMenu = shallowRef<AdminMenu>()
 const editorOpen = ref(false)
 const form = reactive({ title: '', icon: '', sortOrder: '', isVisible: true })
 const saving = ref(false)
 const saveError = ref('')
+
+const keyword = computed(() => search.value.trim().toLowerCase())
+const visibleMenus = computed(() => {
+    if (!keyword.value) return menus.items.value
+
+    function filterMenus(items: AdminMenu[]): AdminMenu[] {
+        return items.flatMap(menu => {
+            if (menu.title.toLowerCase().includes(keyword.value) || menu.path?.toLowerCase().includes(keyword.value)) {
+                return [menu]
+            }
+
+            const children = filterMenus(menu.children)
+            return children.length ? [{ ...menu, children }] : []
+        })
+    }
+
+    return filterMenus(menus.items.value)
+})
 
 function openEditor(menu: AdminMenu) {
     editingMenu.value = menu
@@ -58,37 +76,25 @@ async function submit() {
 </script>
 
 <template>
-    <ManagementTable :loading="menus.loading.value" :error="menus.error.value" @refresh="menus.load">
-        <el-table v-loading="menus.loading.value" :data="menus.items.value" row-key="id" default-expand-all
-            :empty-text="menus.error.value ? '列表加载失败' : '暂无菜单'">
-            <el-table-column label="菜单名称" min-width="164" show-overflow-tooltip>
-                <template #default="{ row }">
-                    <Icon v-if="row.icon" :icon="row.icon" aria-hidden="true" />
-                    {{ row.title }}
-                </template>
-            </el-table-column>
-            <el-table-column label="路由" min-width="126" show-overflow-tooltip>
-                <template #default="{ row }">{{ row.path ?? '目录' }}</template>
-            </el-table-column>
-            <el-table-column label="访问权限" min-width="152" show-overflow-tooltip>
-                <template #default="{ row }">{{ row.permissionCode ?? '—' }}</template>
-            </el-table-column>
-            <el-table-column label="排序值" prop="sortOrder" width="86" />
-            <el-table-column label="可见设置" width="100">
-                <template #default="{ row }">
-                    <el-tag :type="row.isVisible ? 'success' : 'info'">
-                        {{ row.isVisible ? '显示' : '隐藏' }}
-                    </el-tag>
-                </template>
-            </el-table-column>
-            <!-- @vue-generic {AdminMenu} -->
-            <el-table-column v-if="auth.can('menus:update')" label="操作" width="86">
-                <template #default="{ row }">
-                    <el-button link type="primary" :disabled="saving" @click="openEditor(row)">编辑</el-button>
-                </template>
-            </el-table-column>
-        </el-table>
-    </ManagementTable>
+    <el-card class="menu-management" body-class="menu-management__body" shadow="never">
+        <div class="menu-management__search" role="search" aria-label="菜单筛选">
+            <el-input v-model="search" aria-label="搜索菜单名称或路由" placeholder="搜索菜单名称或路由" clearable />
+        </div>
+
+        <p v-if="menus.error.value" class="menu-management__error" role="alert">{{ menus.error.value }}</p>
+
+        <div v-loading="menus.loading.value" class="menu-management__results" :aria-busy="menus.loading.value">
+            <div class="menu-management__scroll" role="region" aria-label="菜单列表" tabindex="0">
+                <ul v-if="visibleMenus.length" class="menu-management__tree" role="list">
+                    <MenuTreeItem v-for="menu in visibleMenus" :key="menu.id" :menu="menu" :keyword="keyword"
+                        :can-edit="auth.can('menus:update')" :saving="saving" @edit="openEditor" />
+                </ul>
+                <p v-else-if="!menus.loading.value && !menus.error.value" class="menu-management__empty" role="status">
+                    {{ keyword ? '没有匹配的菜单' : '暂无菜单' }}
+                </p>
+            </div>
+        </div>
+    </el-card>
 
     <ManagementDialog v-model="editorOpen" :title="`编辑菜单 · ${editingMenu?.title ?? ''}`"
         :saving="saving" :error="saveError" @submit="submit">
@@ -110,3 +116,64 @@ async function submit() {
         <p v-if="!editingMenu?.path">隐藏此目录也会隐藏其下的菜单。</p>
     </ManagementDialog>
 </template>
+
+<style scoped lang="scss">
+.menu-management {
+    --el-card-border-radius: var(--tk-radius-base);
+    --el-card-padding: 20px;
+
+    height: 100%;
+    min-width: 0;
+
+    :deep(.menu-management__body) {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        height: 100%;
+    }
+
+    .menu-management__search {
+        width: min(320px, 100%);
+    }
+
+    .menu-management__error {
+        margin: 0;
+        color: var(--tk-color-error);
+        overflow-wrap: anywhere;
+    }
+
+    .menu-management__results {
+        flex: 1;
+        min-height: 0;
+        max-width: 600px;
+
+        .menu-management__scroll {
+            container-type: inline-size;
+            height: 100%;
+            overflow: auto;
+
+            &:focus-visible {
+                outline: 2px solid var(--tk-color-primary);
+                outline-offset: -2px;
+            }
+
+            .menu-management__tree {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .menu-management__empty {
+                margin: 0;
+                padding-block: 40px;
+                color: var(--tk-color-text-secondary);
+                text-align: center;
+            }
+        }
+    }
+
+    @media (max-width: 540px) {
+        --el-card-padding: 12px;
+    }
+}
+</style>

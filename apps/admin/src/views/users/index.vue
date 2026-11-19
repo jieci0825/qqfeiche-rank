@@ -165,7 +165,7 @@ function clearPassword() {
 
 <template>
     <ManagementTable :loading="users.loading.value" :error="users.error.value" @refresh="users.load">
-        <template #filters>
+        <template #search>
             <el-input v-model="search" aria-label="搜索用户名或显示名称" placeholder="搜索用户名或显示名称" clearable />
             <el-select v-model="status" aria-label="筛选用户状态">
                 <el-option label="全部状态" value="all" />
@@ -177,7 +177,7 @@ function clearPassword() {
             <el-button type="primary" :disabled="saving" @click="openEditor({ kind: 'create' })">新增用户</el-button>
         </template>
 
-        <el-table v-loading="users.loading.value" :data="visibleUsers" row-key="id"
+        <el-table v-loading="users.loading.value" :data="visibleUsers" row-key="id" height="100%" :scrollbar-tabindex="0"
             :empty-text="users.error.value ? '列表加载失败' : search || status !== 'all' ? '没有匹配的用户' : '暂无用户'">
             <el-table-column label="用户名" prop="username" min-width="120" show-overflow-tooltip />
             <el-table-column label="显示名称" prop="displayName" min-width="120" show-overflow-tooltip />
@@ -195,19 +195,21 @@ function clearPassword() {
                 </template>
             </el-table-column>
             <!-- @vue-generic {User} -->
-            <el-table-column v-if="showActions" label="操作" width="232">
+            <el-table-column v-if="showActions" label="操作" width="280">
                 <template #default="{ row }">
-                    <el-button v-if="auth.can('users:update')" link type="primary" :disabled="saving"
-                        @click="openEditor({ kind: 'edit', user: row })">编辑</el-button>
-                    <el-button v-if="auth.can('users:assign-roles')" link type="primary" :disabled="saving"
-                        @click="openEditor({ kind: 'roles', user: row })">分配角色</el-button>
-                    <el-button v-if="auth.can('users:reset-password')" link type="primary" :disabled="saving"
-                        @click="openEditor({ kind: 'password', user: row })">重置密码</el-button>
-                    <el-button v-if="auth.can(row.isActive ? 'users:disable' : 'users:enable')" link
-                        :type="row.isActive ? 'danger' : 'primary'" :loading="changingStatusId === row.id"
-                        :disabled="changingStatusId !== undefined" @click="changeStatus(row)">
-                        {{ row.isActive ? '停用' : '启用' }}
-                    </el-button>
+                    <div class="user-row-actions">
+                        <el-button v-if="auth.can('users:update')" link type="primary" :disabled="saving"
+                            @click="openEditor({ kind: 'edit', user: row })">编辑</el-button>
+                        <el-button v-if="auth.can('users:assign-roles')" link type="primary" :disabled="saving"
+                            @click="openEditor({ kind: 'roles', user: row })">分配角色</el-button>
+                        <el-button v-if="auth.can('users:reset-password')" link type="primary" :disabled="saving"
+                            @click="openEditor({ kind: 'password', user: row })">重置密码</el-button>
+                        <el-button v-if="auth.can(row.isActive ? 'users:disable' : 'users:enable')" link
+                            :type="row.isActive ? 'danger' : 'primary'" :loading="changingStatusId === row.id"
+                            :disabled="changingStatusId !== undefined" @click="changeStatus(row)">
+                            {{ row.isActive ? '停用' : '启用' }}
+                        </el-button>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
@@ -245,3 +247,11 @@ function clearPassword() {
         </template>
     </ManagementDialog>
 </template>
+
+<style scoped lang="scss">
+.user-row-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+</style>

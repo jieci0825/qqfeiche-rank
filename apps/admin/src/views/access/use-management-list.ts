@@ -5,6 +5,7 @@ export function useManagementList<T>(fetchItems: (signal: AbortSignal) => Promis
     const items = shallowRef<T[]>([])
     const loading = ref(immediate)
     const error = ref('')
+    const hasLoaded = ref(false)
     let currentRequest: AbortController | undefined
     let disposed = false
 
@@ -17,7 +18,10 @@ export function useManagementList<T>(fetchItems: (signal: AbortSignal) => Promis
         error.value = ''
         try {
             const result = await fetchItems(request.signal)
-            if (!request.signal.aborted) items.value = result
+            if (!request.signal.aborted) {
+                items.value = result
+                hasLoaded.value = true
+            }
         } catch (cause) {
             if (!request.signal.aborted) error.value = apiErrorMessage(cause)
         } finally {
@@ -34,5 +38,5 @@ export function useManagementList<T>(fetchItems: (signal: AbortSignal) => Promis
         currentRequest?.abort()
     })
 
-    return { items, loading, error, load }
+    return { items, loading, error, hasLoaded, load }
 }
