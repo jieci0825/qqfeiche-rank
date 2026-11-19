@@ -24,6 +24,7 @@ package-lock.json
 .playwright-cli
 .idea
 .turbo
+.impeccable
 .trae
 .cursor
 .codex
