@@ -21,7 +21,7 @@ let listRequest: AbortController | undefined
 
 const editorOpen = ref(false)
 const editingId = ref<number>()
-const form = reactive({ name: '', description: '', sortOrder: '0' })
+const form = reactive({ name: '', sortOrder: '0' })
 const saving = ref(false)
 const saveError = ref('')
 let saveRequest: AbortController | undefined
@@ -72,7 +72,6 @@ function openEditor(track?: Track) {
     form.name = track?.name ?? ''
     existingCoverUrl.value = track?.coverUrl ?? null
     removeExistingCover.value = false
-    form.description = track?.description ?? ''
     form.sortOrder = String(track?.sortOrder ?? 0)
     saveError.value = ''
     editorOpen.value = true
@@ -142,7 +141,6 @@ async function submit() {
             name,
             sortOrder,
             coverUploadTicket: coverTicket ?? (removeExistingCover.value ? null : undefined),
-            description: form.description.trim() || null,
         }, editingId.value, request.signal)
         request.signal.throwIfAborted()
         editorOpen.value = false
@@ -217,7 +215,6 @@ onBeforeUnmount(() => {
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="描述" prop="description" min-width="140" show-overflow-tooltip />
             <el-table-column label="操作" width="150">
                 <template #default="{ row }">
                     <el-button link type="primary" :disabled="saving" @click="openEditor(row as Track)">编辑</el-button>
@@ -270,10 +267,6 @@ onBeforeUnmount(() => {
                     </div>
                     <p v-if="coverError" class="admin-tracks__error" role="alert">{{ coverError }}</p>
                 </div>
-            </el-form-item>
-            <el-form-item class="admin-tracks__field" label="描述" for="track-description">
-                <el-input id="track-description" v-model="form.description" type="textarea" :rows="3"
-                    maxlength="1000" />
             </el-form-item>
             <p v-if="saveError" class="admin-tracks__error" role="alert">{{ saveError }}</p>
             <div class="admin-tracks__actions">

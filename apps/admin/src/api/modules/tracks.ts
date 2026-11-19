@@ -4,7 +4,6 @@ import { ApiError } from '../core/errors'
 export interface TrackInput {
     name: string
     coverUploadTicket?: string | null
-    description: string | null
     sortOrder: number
 }
 

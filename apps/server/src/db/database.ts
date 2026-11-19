@@ -7,6 +7,7 @@ import { rbacSchema, seedRbac } from './migrations/003-rbac.ts'
 import { superAdminRoleProtection } from './migrations/004-protect-super-admin-role.ts'
 import { trackCoverKeysSchema } from './migrations/005-track-cover-keys.ts'
 import { filesSchema } from './migrations/006-files.ts'
+import { dropTrackDescription } from './migrations/007-drop-track-description.ts'
 
 const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => void }[] = [
     { version: 1, sql: authSchema },
@@ -15,6 +16,7 @@ const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => v
     { version: 4, sql: superAdminRoleProtection },
     { version: 5, sql: trackCoverKeysSchema },
     { version: 6, sql: filesSchema },
+    { version: 7, sql: dropTrackDescription },
 ]
 
 export function openDatabase(path: string): DatabaseSync {

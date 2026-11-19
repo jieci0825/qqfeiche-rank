@@ -7,7 +7,6 @@ import type { AuthorizedActor } from '../rbac/rbac.store.ts'
 export interface TrackInput {
     name: string
     coverFile?: UploadedFile | null
-    description: string | null
     sortOrder: number
 }
 
@@ -30,7 +29,7 @@ interface TrackActor {
 
 export type TrackStore = ReturnType<typeof createTrackStore>
 
-const columns = `id, name, cover_file_id AS coverFileId, description, status,
+const columns = `id, name, cover_file_id AS coverFileId, status,
     sort_order AS sortOrder, created_at AS createdAt, updated_at AS updatedAt`
 const selectWithCover = `
     SELECT track.*, files.object_key AS coverObjectKey
@@ -45,11 +44,11 @@ export function createTrackStore(db: DatabaseSync) {
     const byIdWithCover = db.prepare(`${selectWithCover} WHERE track.id = ?`)
     const byName = db.prepare('SELECT id FROM tracks WHERE name = ?')
     const insert = db.prepare(`
-        INSERT INTO tracks (name, cover_file_id, description, sort_order, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?) RETURNING ${columns}
+        INSERT INTO tracks (name, cover_file_id, sort_order, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?) RETURNING ${columns}
     `)
     const update = db.prepare(`
-        UPDATE tracks SET name = ?, cover_file_id = ?, description = ?, sort_order = ?, updated_at = ?
+        UPDATE tracks SET name = ?, cover_file_id = ?, sort_order = ?, updated_at = ?
         WHERE id = ? RETURNING ${columns}
     `)
     const archive = db.prepare(`
@@ -89,14 +88,14 @@ export function createTrackStore(db: DatabaseSync) {
                     throw new HttpError(409, 'TRACK_NAME_EXISTS', '赛道名称已存在')
                 }
 
-                const { name, coverFile, description, sortOrder } = input
+                const { name, coverFile, sortOrder } = input
                 const now = new Date().toISOString()
                 const coverFileId = coverFile === undefined
                     ? before?.coverFileId ?? null
                     : coverFile && files.registerUpload(coverFile, adminId, now)
                 const after = (id === undefined
-                    ? insert.get(name, coverFileId, description, sortOrder, now, now)
-                    : update.get(name, coverFileId, description, sortOrder, now, id)) as unknown as Track
+                    ? insert.get(name, coverFileId, sortOrder, now, now)
+                    : update.get(name, coverFileId, sortOrder, now, id)) as unknown as Track
                 recordChange(id === undefined ? 'track.create' : 'track.update', { adminId, ip: actor.ip }, before, after)
                 return byIdWithCover.get(after.id) as unknown as TrackWithCover
             })

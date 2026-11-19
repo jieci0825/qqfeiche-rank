@@ -109,7 +109,7 @@ qqfeiche-rank/
 | `PUT /api/admin/tracks/:id` | `tracks:update` | 修改赛道，返回 `{ track }` |
 | `POST /api/admin/tracks/:id/archive` | `tracks:archive` | 归档赛道，返回 `204` |
 
-新增和修改接受 JSON `{ name, description, sortOrder, coverUploadTicket? }`。描述可为空，排序值为整数且越小越靠前。省略 `coverUploadTicket` 则保留原封面（新增时无封面），传 `null` 则移除封面，传上传凭证则设置新封面。赛道响应包含 `coverFileId` 和用于展示的 `coverUrl`，无封面时两者均为 `null`。
+新增和修改接受 JSON `{ name, sortOrder, coverUploadTicket? }`。排序值为整数且越小越靠前。省略 `coverUploadTicket` 则保留原封面（新增时无封面），传 `null` 则移除封面，传上传凭证则设置新封面。赛道响应包含 `coverFileId` 和用于展示的 `coverUrl`，无封面时两者均为 `null`。
 
 #### 赛道封面直传 COS
 

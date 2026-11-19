@@ -86,13 +86,5 @@ function parseTrack(body: Record<string, unknown>) {
         throw new HttpError(400, 'INVALID_TRACK_INPUT', '封面须通过图片上传设置')
     }
 
-    return { name, sortOrder, coverUploadTicket, description: optionalText(body.description, 1000, '描述') }
-}
-
-function optionalText(input: unknown, maxLength: number, label: string) {
-    if (input == null) return null
-    if (typeof input !== 'string' || input.trim().length > maxLength) {
-        throw new HttpError(400, 'INVALID_TRACK_INPUT', `${label}不能超过 ${maxLength} 字`)
-    }
-    return input.trim() || null
+    return { name, sortOrder, coverUploadTicket }
 }
