@@ -179,9 +179,9 @@ export function createRbacStore(db: DatabaseSync) {
     }
 
     return {
-        requirePermission(adminId: number, code: PermissionCode): AdminAccess {
+        requirePermission(adminId: number, code: PermissionCode, ...alternatives: PermissionCode[]): AdminAccess {
             const access = getAccess(adminId)
-            if (!access.permissions.has(code)) {
+            if (!access.permissions.has(code) && !alternatives.some(permission => access.permissions.has(permission))) {
                 throw new HttpError(403, 'PERMISSION_DENIED', '当前账号没有此操作的权限')
             }
             return access

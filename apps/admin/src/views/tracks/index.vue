@@ -1,7 +1,15 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { apiErrorMessage, archiveTrack, listTracks, saveTrack, type Track } from '@/api'
+import {
+    ApiError,
+    apiErrorMessage,
+    archiveTrack,
+    listTracks,
+    saveTrack,
+    uploadTrackCover,
+    type Track,
+} from '@/api'
 import ManagementTable from '../access/ManagementTable.vue'
 
 const tracks = ref<Track[]>([])
@@ -13,9 +21,22 @@ let listRequest: AbortController | undefined
 
 const editorOpen = ref(false)
 const editingId = ref<number>()
-const form = reactive({ name: '', coverUrl: '', description: '', sortOrder: '0' })
+const form = reactive({ name: '', description: '', sortOrder: '0' })
 const saving = ref(false)
 const saveError = ref('')
+let saveRequest: AbortController | undefined
+
+const coverTypes = ['image/jpeg', 'image/png', 'image/webp']
+const coverInput = ref<HTMLInputElement>()
+const existingCoverUrl = ref<string | null>(null)
+const removeExistingCover = ref(false)
+const selectedCover = shallowRef<File>()
+const coverPreview = ref('')
+const visibleCover = computed(() => coverPreview.value || (removeExistingCover.value ? null : existingCoverUrl.value))
+const coverError = ref('')
+const uploadingCover = ref(false)
+let coverTicket: string | undefined
+
 const archivingId = ref<number>()
 
 const visibleTracks = computed(() => {
@@ -46,17 +67,57 @@ async function loadTracks() {
 }
 
 function openEditor(track?: Track) {
+    clearCoverSelection()
     editingId.value = track?.id
     form.name = track?.name ?? ''
-    form.coverUrl = track?.coverUrl ?? ''
+    existingCoverUrl.value = track?.coverUrl ?? null
+    removeExistingCover.value = false
     form.description = track?.description ?? ''
     form.sortOrder = String(track?.sortOrder ?? 0)
     saveError.value = ''
     editorOpen.value = true
 }
 
+function clearCoverSelection() {
+    if (coverPreview.value) URL.revokeObjectURL(coverPreview.value)
+    selectedCover.value = undefined
+    coverPreview.value = ''
+    coverError.value = ''
+    coverTicket = undefined
+}
+
+function cancelCoverSelection() {
+    clearCoverSelection()
+    saveError.value = ''
+}
+
+function toggleCoverRemoval() {
+    removeExistingCover.value = !removeExistingCover.value
+    saveError.value = ''
+}
+
+function selectCover(event: Event) {
+    const input = event.currentTarget as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    if (!file || saving.value || !editorOpen.value) return
+
+    clearCoverSelection()
+    saveError.value = ''
+    if (!coverTypes.includes(file.type)) {
+        coverError.value = '请选择 JPEG、PNG 或 WebP 图片'
+        return
+    }
+    if (file.size === 0 || file.size > 5 * 1024 * 1024) {
+        coverError.value = '封面须大于 0 字节且不超过 5 MB'
+        return
+    }
+    selectedCover.value = file
+    coverPreview.value = URL.createObjectURL(file)
+}
+
 async function submit() {
-    if (saving.value) return
+    if (saving.value || coverError.value) return
 
     const name = form.name.trim()
     const sortOrder = Number(form.sortOrder)
@@ -65,21 +126,37 @@ async function submit() {
         return
     }
 
+    const request = new AbortController()
+    saveRequest = request
     saving.value = true
     saveError.value = ''
     try {
+        if (selectedCover.value && !coverTicket) {
+            uploadingCover.value = true
+            const ticket = await uploadTrackCover(selectedCover.value, request.signal)
+            request.signal.throwIfAborted()
+            coverTicket = ticket
+            uploadingCover.value = false
+        }
         await saveTrack({
             name,
             sortOrder,
-            coverUrl: form.coverUrl.trim() || null,
+            coverUploadTicket: coverTicket ?? (removeExistingCover.value ? null : undefined),
             description: form.description.trim() || null,
-        }, editingId.value)
+        }, editingId.value, request.signal)
+        request.signal.throwIfAborted()
         editorOpen.value = false
         ElMessage.success('赛道已保存')
         await loadTracks()
     } catch (error) {
+        if (request.signal.aborted) return
+        if (error instanceof ApiError && ['INVALID_UPLOAD_TICKET', 'UPLOAD_EXPIRED', 'UPLOAD_NOT_FOUND'].includes(error.code)) {
+            coverTicket = undefined
+        }
         saveError.value = apiErrorMessage(error)
     } finally {
+        saveRequest = undefined
+        uploadingCover.value = false
         saving.value = false
     }
 }
@@ -105,7 +182,14 @@ async function confirmArchive(track: Track) {
 }
 
 onMounted(loadTracks)
-onBeforeUnmount(() => listRequest?.abort())
+watch(editorOpen, open => {
+    if (!open) clearCoverSelection()
+})
+onBeforeUnmount(() => {
+    listRequest?.abort()
+    saveRequest?.abort()
+    clearCoverSelection()
+})
 </script>
 
 <template>
@@ -156,8 +240,36 @@ onBeforeUnmount(() => listRequest?.abort())
             <el-form-item class="admin-tracks__field" label="排序值（越小越靠前）" for="track-sort">
                 <el-input id="track-sort" v-model="form.sortOrder" type="number" step="1" />
             </el-form-item>
-            <el-form-item class="admin-tracks__field" label="封面地址" for="track-cover">
-                <el-input id="track-cover" v-model="form.coverUrl" maxlength="1500" />
+            <el-form-item class="admin-tracks__field" label="赛道封面（选填）">
+                <div class="admin-tracks__cover">
+                    <el-image v-if="visibleCover" :key="visibleCover" class="admin-tracks__cover-preview"
+                        :src="visibleCover" fit="contain" :alt="selectedCover ? '新封面预览' : '当前赛道封面'">
+                        <template #error>
+                            <span class="admin-tracks__cover-note">无法预览此图片</span>
+                        </template>
+                    </el-image>
+                    <input ref="coverInput" type="file" :accept="coverTypes.join(',')" hidden @change="selectCover" />
+                    <div class="admin-tracks__cover-controls">
+                        <el-button aria-describedby="track-cover-hint" @click="coverInput?.click()">
+                            {{ visibleCover ? '更换图片' : '选择图片' }}
+                        </el-button>
+                        <el-button v-if="selectedCover || coverError" link @click="cancelCoverSelection">
+                            {{ selectedCover ? '取消选择' : '清除提示' }}
+                        </el-button>
+                        <el-button v-else-if="existingCoverUrl" link :type="removeExistingCover ? 'primary' : 'danger'"
+                            @click="toggleCoverRemoval">
+                            {{ removeExistingCover ? '撤销移除' : '移除封面' }}
+                        </el-button>
+                    </div>
+                    <div id="track-cover-hint" class="admin-tracks__cover-note" aria-live="polite">
+                        支持 JPEG、PNG、WebP，最大 5 MB。
+                        <div v-if="selectedCover" class="admin-tracks__cover-filename">
+                            已选择「{{ selectedCover.name }}」，保存时上传。
+                        </div>
+                        <div v-else-if="removeExistingCover">封面将在保存后移除。</div>
+                    </div>
+                    <p v-if="coverError" class="admin-tracks__error" role="alert">{{ coverError }}</p>
+                </div>
             </el-form-item>
             <el-form-item class="admin-tracks__field" label="描述" for="track-description">
                 <el-input id="track-description" v-model="form.description" type="textarea" :rows="3"
@@ -166,7 +278,9 @@ onBeforeUnmount(() => listRequest?.abort())
             <p v-if="saveError" class="admin-tracks__error" role="alert">{{ saveError }}</p>
             <div class="admin-tracks__actions">
                 <el-button @click="editorOpen = false">取消</el-button>
-                <el-button type="primary" native-type="submit" :loading="saving">保存</el-button>
+                <el-button type="primary" native-type="submit" :loading="saving" :disabled="Boolean(coverError)">
+                    {{ uploadingCover ? '正在上传封面' : saving ? '正在保存' : '保存' }}
+                </el-button>
             </div>
         </el-form>
     </el-dialog>
@@ -179,6 +293,38 @@ onBeforeUnmount(() => listRequest?.abort())
 
     .admin-tracks__field {
         margin-bottom: 0;
+
+        .admin-tracks__cover {
+            display: grid;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+
+            .admin-tracks__cover-preview {
+                display: grid;
+                place-items: center;
+                width: 168px;
+                max-width: 100%;
+                height: 96px;
+            }
+
+            .admin-tracks__cover-controls {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .admin-tracks__cover-note {
+                margin: 0;
+                color: var(--tk-color-text-secondary);
+                line-height: 1.5;
+
+                .admin-tracks__cover-filename {
+                    overflow-wrap: anywhere;
+                }
+            }
+        }
     }
 
     .admin-tracks__actions {

@@ -6,12 +6,21 @@ import type { AuthService } from '../auth/auth.service.ts'
 import type { PermissionCode } from '../rbac/rbac.catalog.ts'
 import { permissionActor } from '../rbac/rbac.guard.ts'
 import type { RbacStore } from '../rbac/rbac.store.ts'
-import type { TrackInput, TrackStore } from './tracks.store.ts'
+import type { CosUploads } from '../uploads/cos-uploads.ts'
+import { confirmTrackCover } from './track-cover.routes.ts'
+import type { TrackStore, TrackWithCover } from './tracks.store.ts'
 
 const tracksPath = '/api/admin/tracks'
 const trackPath = /^\/api\/admin\/tracks\/([1-9]\d*)(\/archive)?$/
 
-export function createTrackRoutes(tracks: TrackStore, auth: AuthService, rbac: RbacStore): Koa.Middleware {
+export function createTrackRoutes(tracks: TrackStore, auth: AuthService, rbac: RbacStore, uploads?: CosUploads): Koa.Middleware {
+    function presentTrack({ coverObjectKey, ...track }: TrackWithCover) {
+        return {
+            ...track,
+            coverUrl: coverObjectKey === null ? null : uploads?.publicUrl(coverObjectKey) ?? null,
+        }
+    }
+
     return async (ctx, next) => {
         const isCollection = ctx.path === tracksPath
         const match = trackPath.exec(ctx.path)
@@ -28,10 +37,10 @@ export function createTrackRoutes(tracks: TrackStore, auth: AuthService, rbac: R
 
         const permission = trackPermission(ctx.method, Boolean(match?.[2]))
         const actor = permissionActor(ctx, auth, rbac, permission)
-        actor.authorize()
+        const { adminId } = actor.authorize()
 
         if (ctx.method === 'GET') {
-            ctx.body = { tracks: tracks.list() }
+            ctx.body = { tracks: tracks.list().map(presentTrack) }
             return
         }
 
@@ -46,8 +55,11 @@ export function createTrackRoutes(tracks: TrackStore, auth: AuthService, rbac: R
             return
         }
 
-        const input = parseTrack(await readJsonObject(ctx))
-        ctx.body = { track: tracks.save(input, actor, id) }
+        const { coverUploadTicket, ...input } = parseTrack(await readJsonObject(ctx))
+        const coverFile = typeof coverUploadTicket === 'string'
+            ? await confirmTrackCover(coverUploadTicket, adminId, uploads)
+            : coverUploadTicket
+        ctx.body = { track: presentTrack(tracks.save({ ...input, coverFile }, actor, id)) }
         ctx.status = isCollection ? 201 : 200
     }
 }
@@ -58,7 +70,7 @@ function trackPermission(method: string, isArchive: boolean): PermissionCode {
     return isArchive ? 'tracks:archive' : 'tracks:create'
 }
 
-function parseTrack(body: Record<string, unknown>): TrackInput {
+function parseTrack(body: Record<string, unknown>) {
     const name = typeof body.name === 'string' ? body.name.trim() : ''
     if (!name || name.length > 100) {
         throw new HttpError(400, 'INVALID_TRACK_INPUT', '请输入 1 至 100 字的赛道名称')
@@ -69,12 +81,12 @@ function parseTrack(body: Record<string, unknown>): TrackInput {
         throw new HttpError(400, 'INVALID_TRACK_INPUT', '排序值必须是有效整数')
     }
 
-    const coverUrl = optionalText(body.coverUrl, 1500, '封面地址')
-    if (coverUrl && !isCoverUrl(coverUrl)) {
-        throw new HttpError(400, 'INVALID_TRACK_INPUT', '封面地址须使用 HTTP(S) 或站内路径')
+    const { coverUploadTicket } = body
+    if ('coverUrl' in body || (coverUploadTicket != null && typeof coverUploadTicket !== 'string')) {
+        throw new HttpError(400, 'INVALID_TRACK_INPUT', '封面须通过图片上传设置')
     }
 
-    return { name, sortOrder, coverUrl, description: optionalText(body.description, 1000, '描述') }
+    return { name, sortOrder, coverUploadTicket, description: optionalText(body.description, 1000, '描述') }
 }
 
 function optionalText(input: unknown, maxLength: number, label: string) {
@@ -83,12 +95,4 @@ function optionalText(input: unknown, maxLength: number, label: string) {
         throw new HttpError(400, 'INVALID_TRACK_INPUT', `${label}不能超过 ${maxLength} 字`)
     }
     return input.trim() || null
-}
-
-function isCoverUrl(value: string) {
-    if (/[\\\t\r\n]/.test(value)) return false
-    if (value.startsWith('/')) return !value.startsWith('//')
-
-    const url = URL.parse(value)
-    return Boolean(url && ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password)
 }

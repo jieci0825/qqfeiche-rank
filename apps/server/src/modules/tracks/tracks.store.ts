@@ -1,20 +1,26 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { writeTransaction } from '../../db/database.ts'
 import { HttpError } from '../../http/errors.ts'
+import { createFileStore, type UploadedFile } from '../files/files.store.ts'
 import type { AuthorizedActor } from '../rbac/rbac.store.ts'
 
 export interface TrackInput {
     name: string
-    coverUrl: string | null
+    coverFile?: UploadedFile | null
     description: string | null
     sortOrder: number
 }
 
-interface Track extends TrackInput {
+interface Track extends Omit<TrackInput, 'coverFile'> {
     id: number
+    coverFileId: number | null
     status: 'active' | 'archived'
     createdAt: string
     updatedAt: string
+}
+
+export interface TrackWithCover extends Track {
+    coverObjectKey: string | null
 }
 
 interface TrackActor {
@@ -24,19 +30,26 @@ interface TrackActor {
 
 export type TrackStore = ReturnType<typeof createTrackStore>
 
-const columns = `id, name, cover_url AS coverUrl, description, status,
+const columns = `id, name, cover_file_id AS coverFileId, description, status,
     sort_order AS sortOrder, created_at AS createdAt, updated_at AS updatedAt`
+const selectWithCover = `
+    SELECT track.*, files.object_key AS coverObjectKey
+    FROM (SELECT ${columns} FROM tracks) AS track
+    LEFT JOIN files ON files.id = track.coverFileId
+`
 
 export function createTrackStore(db: DatabaseSync) {
-    const list = db.prepare(`SELECT ${columns} FROM tracks ORDER BY sort_order, name, id`)
+    const files = createFileStore(db)
+    const list = db.prepare(`${selectWithCover} ORDER BY track.sortOrder, track.name, track.id`)
     const byId = db.prepare(`SELECT ${columns} FROM tracks WHERE id = ?`)
+    const byIdWithCover = db.prepare(`${selectWithCover} WHERE track.id = ?`)
     const byName = db.prepare('SELECT id FROM tracks WHERE name = ?')
     const insert = db.prepare(`
-        INSERT INTO tracks (name, cover_url, description, sort_order, created_at, updated_at)
+        INSERT INTO tracks (name, cover_file_id, description, sort_order, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?) RETURNING ${columns}
     `)
     const update = db.prepare(`
-        UPDATE tracks SET name = ?, cover_url = ?, description = ?, sort_order = ?, updated_at = ?
+        UPDATE tracks SET name = ?, cover_file_id = ?, description = ?, sort_order = ?, updated_at = ?
         WHERE id = ? RETURNING ${columns}
     `)
     const archive = db.prepare(`
@@ -64,7 +77,7 @@ export function createTrackStore(db: DatabaseSync) {
 
     return {
         list() {
-            return list.all() as unknown as Track[]
+            return list.all() as unknown as TrackWithCover[]
         },
 
         save(input: TrackInput, actor: AuthorizedActor, id?: number) {
@@ -76,13 +89,16 @@ export function createTrackStore(db: DatabaseSync) {
                     throw new HttpError(409, 'TRACK_NAME_EXISTS', '赛道名称已存在')
                 }
 
-                const { name, coverUrl, description, sortOrder } = input
+                const { name, coverFile, description, sortOrder } = input
                 const now = new Date().toISOString()
+                const coverFileId = coverFile === undefined
+                    ? before?.coverFileId ?? null
+                    : coverFile && files.registerUpload(coverFile, adminId, now)
                 const after = (id === undefined
-                    ? insert.get(name, coverUrl, description, sortOrder, now, now)
-                    : update.get(name, coverUrl, description, sortOrder, now, id)) as unknown as Track
+                    ? insert.get(name, coverFileId, description, sortOrder, now, now)
+                    : update.get(name, coverFileId, description, sortOrder, now, id)) as unknown as Track
                 recordChange(id === undefined ? 'track.create' : 'track.update', { adminId, ip: actor.ip }, before, after)
-                return after
+                return byIdWithCover.get(after.id) as unknown as TrackWithCover
             })
         },
 

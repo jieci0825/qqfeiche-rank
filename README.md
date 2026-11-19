@@ -109,7 +109,33 @@ qqfeiche-rank/
 | `PUT /api/admin/tracks/:id` | `tracks:update` | 修改赛道，返回 `{ track }` |
 | `POST /api/admin/tracks/:id/archive` | `tracks:archive` | 归档赛道，返回 `204` |
 
-新增和修改接受 JSON `{ name, coverUrl, description, sortOrder }`。封面地址和描述可以为空，排序值为整数且越小越靠前。
+新增和修改接受 JSON `{ name, description, sortOrder, coverUploadTicket? }`。描述可为空，排序值为整数且越小越靠前。省略 `coverUploadTicket` 则保留原封面（新增时无封面），传 `null` 则移除封面，传上传凭证则设置新封面。赛道响应包含 `coverFileId` 和用于展示的 `coverUrl`，无封面时两者均为 `null`。
+
+#### 赛道封面直传 COS
+
+赛道表单支持预览、选择、更换和移除封面，不接受手填地址。保存时，浏览器先向 API 申请 5 分钟有效的上传签名，再将图片直接 POST 到 COS，随后提交赛道资料和上传凭证。服务端确认文件大小和图片文件头后，在同一数据库事务内将对象 Key（形如 `qqfeiche/tracks/covers/<uuid>.<ext>`）及文件元数据登记到 `files`，并写入 `tracks.cover_file_id`。读取时根据 `COS_PUBLIC_BASE_URL` 生成展示地址。更换或移除封面不会删除原文件。支持 JPEG、PNG、WebP，单张最大 5 MB。
+
+| 接口 | JSON 请求 | 成功响应 |
+| --- | --- | --- |
+| `POST /api/admin/tracks/cover/upload` | `{ size, contentType, originalName? }`，大小单位为字节 | `{ uploadUrl, fields, ticket }` |
+
+申请上传要求后台会话具备 `tracks:create` 或 `tracks:update`。浏览器先将 `fields` 放入表单，再将图片作为最后一个 `file` 字段提交到 `uploadUrl`，最后把 `ticket` 作为 `coverUploadTicket` 随赛道保存请求提交。
+
+在服务端环境变量或 `apps/server/.env` 配置：
+
+```dotenv
+COS_SECRET_ID=<CAM 子账号 SecretId>
+COS_SECRET_KEY=<CAM 子账号 SecretKey>
+COS_BUCKET=assets-125xxxxxxxx
+COS_REGION=ap-guangzhou
+COS_PUBLIC_BASE_URL=https://assets.example.com/
+```
+
+- 五项均未配置时，仍可管理赛道资料，但不能上传新封面，也不能生成已存对象 Key 的访问地址。启用 COS 上传时需一次配置齐全。
+- 从旧表结构升级时不会转存旧封面，赛道资料保留，可在后台重新上传封面。
+- CAM 子账号需要目标桶 `qqfeiche/tracks/covers/*` 的 `cos:PostObject` 和 `cos:GetObject` 权限。使用未启用版本控制的存储桶，使上传表单中的禁止覆盖设置生效。
+- 存储桶 CORS 放行后台页面来源的 `POST`，例如生产环境的 `ADMIN_ORIGIN` 或本地的 `http://localhost:9432`。
+- `COS_PUBLIC_BASE_URL` 使用站点访问者可读取的 HTTP 或 HTTPS 资源根地址。使用私有桶时，为公开封面配置可访问的 CDN 域名并开启 COS 回源鉴权。使用公读私写的专用桶时，也可填写桶的默认域名。
 
 ## 命令
 

@@ -7,6 +7,7 @@ import { AuthService } from './modules/auth/auth.service.ts'
 import { createSqliteAuthStore } from './modules/auth/sqlite-auth.store.ts'
 import { createRbacStore } from './modules/rbac/rbac.store.ts'
 import { createTrackStore } from './modules/tracks/tracks.store.ts'
+import { createCosUploads } from './modules/uploads/cos-uploads.ts'
 
 async function main(): Promise<void> {
     try {
@@ -15,12 +16,19 @@ async function main(): Promise<void> {
         if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
     }
 
-    const { host, port, databasePath, adminUsername, adminPassword, adminOrigins, trustProxy } = loadConfig(process.env)
+    const { host, port, databasePath, adminUsername, adminPassword, adminOrigins, trustProxy, cos } = loadConfig(process.env)
     const db = openDatabase(databasePath)
     try {
         const auth = new AuthService(createSqliteAuthStore(db))
         await auth.initializeAdmin(adminUsername, adminPassword)
-        const app = createApp({ auth, rbac: createRbacStore(db), tracks: createTrackStore(db), adminOrigins, trustProxy })
+        const app = createApp({
+            auth,
+            rbac: createRbacStore(db),
+            tracks: createTrackStore(db),
+            cosUploads: cos && createCosUploads(cos),
+            adminOrigins,
+            trustProxy,
+        })
         const server = app.listen(port, host)
         await once(server, 'listening')
         console.info(`API 服务已启动，监听 ${host}:${port}`)
