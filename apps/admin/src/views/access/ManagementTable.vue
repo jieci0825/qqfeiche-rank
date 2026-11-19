@@ -1,21 +1,15 @@
 <script setup lang="ts">
-defineProps<{ loading: boolean; error: string; compact?: boolean }>()
-defineEmits<{ refresh: [] }>()
+defineProps<{ error: string; compact?: boolean }>()
 </script>
 
 <template>
     <el-card class="management-table" :class="{ 'management-table--compact': compact }"
         body-class="management-table__body" shadow="never">
-        <div class="management-table__controls">
-            <div class="management-table__search" role="search" aria-label="列表筛选">
-                <slot name="search" />
-            </div>
-            <div class="management-table__toolbar">
-                <el-button :loading="loading" @click="$emit('refresh')">刷新列表</el-button>
-                <div v-if="$slots.actions" class="management-table__actions">
-                    <slot name="actions" />
-                </div>
-            </div>
+        <div v-if="$slots.search" class="management-table__search" role="search" aria-label="列表筛选">
+            <slot name="search" />
+        </div>
+        <div v-if="$slots.actions" class="management-table__toolbar">
+            <slot name="actions" />
         </div>
 
         <div class="management-table__results">
@@ -47,35 +41,32 @@ defineEmits<{ refresh: [] }>()
         overflow: hidden;
     }
 
-    .management-table__controls {
-        display: contents;
+    .management-table__search,
+    .management-table__toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        min-height: 0;
+        min-width: 0;
+        overflow: auto;
+    }
 
-        .management-table__search,
-        .management-table__toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px 12px;
-            min-height: 0;
-            min-width: 0;
-            overflow: auto;
-
-            :deep(.el-input) {
-                width: min(240px, 100%);
-            }
-
-            :deep(.el-select) {
-                width: min(132px, 100%);
-            }
+    .management-table__search {
+        :deep(.el-input) {
+            width: min(240px, 100%);
         }
 
-        .management-table__toolbar {
-            .management-table__actions {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px 12px;
-                margin-inline-start: auto;
-            }
+        :deep(.el-select) {
+            width: min(132px, 100%);
+        }
+    }
+
+    .management-table__toolbar {
+        justify-content: flex-start;
+
+        :deep(.el-button + .el-button) {
+            margin-left: 0;
         }
     }
 
@@ -110,24 +101,9 @@ defineEmits<{ refresh: [] }>()
             gap: 16px;
         }
 
-        .management-table__controls {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px 12px;
-
-            .management-table__search,
-            .management-table__toolbar {
-                overflow: visible;
-            }
-
-            .management-table__search {
-                flex: 0 1 240px;
-            }
-
-            .management-table__toolbar {
-                flex: 1 1 max-content;
-            }
+        .management-table__search,
+        .management-table__toolbar {
+            overflow: visible;
         }
     }
 }

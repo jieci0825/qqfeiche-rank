@@ -109,7 +109,7 @@ onBeforeUnmount(() => listRequest?.abort())
 </script>
 
 <template>
-    <ManagementTable :loading="loading" :error="loadError" @refresh="loadTracks">
+    <ManagementTable :error="loadError">
         <template #search>
             <el-input v-model="search" aria-label="搜索赛道名称" placeholder="搜索赛道名称" clearable />
             <el-select v-model="status" aria-label="筛选赛道状态">

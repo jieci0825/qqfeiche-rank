@@ -164,7 +164,7 @@ function clearPassword() {
 </script>
 
 <template>
-    <ManagementTable :loading="users.loading.value" :error="users.error.value" @refresh="users.load">
+    <ManagementTable :error="users.error.value">
         <template #search>
             <el-input v-model="search" aria-label="搜索用户名或显示名称" placeholder="搜索用户名或显示名称" clearable />
             <el-select v-model="status" aria-label="筛选用户状态">

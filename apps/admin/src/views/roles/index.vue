@@ -161,8 +161,7 @@ async function confirmDelete(role: Role) {
 </script>
 
 <template>
-    <ManagementTable class="roles-page" compact :loading="roles.loading.value" :error="roles.error.value"
-        @refresh="roles.load">
+    <ManagementTable class="roles-page" compact :error="roles.error.value">
         <template #search>
             <el-input ref="searchInput" v-model="search" aria-label="搜索角色名称或编码"
                 placeholder="搜索角色名称或编码" clearable />
