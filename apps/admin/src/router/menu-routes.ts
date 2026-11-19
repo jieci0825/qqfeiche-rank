@@ -1,5 +1,5 @@
 import type { RouteComponent, Router } from 'vue-router'
-import type { AdminMenu } from '@/api/auth'
+import type { AdminMenu } from '@/api'
 
 declare module 'vue-router' {
     interface RouteMeta {

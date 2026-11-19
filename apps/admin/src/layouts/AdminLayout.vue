@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { Icon } from '@/icons'
 import { useAuthStore } from '@/stores/auth'
@@ -9,8 +9,13 @@ import AdminSidebarItem from './components/AdminSidebarItem.vue'
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const mainContent = ref<HTMLElement | null>(null)
 const mobileNavExpanded = ref(false)
 const retrying = ref(false)
+
+watch(() => route.fullPath, () => {
+    if (mainContent.value) mainContent.value.scrollTop = 0
+}, { flush: 'post' })
 
 async function retryMenus() {
     retrying.value = true
@@ -55,11 +60,13 @@ async function retryMenus() {
         </aside>
 
         <main class="admin-main">
-            <div v-if="auth.menus === null">
-                <p role="alert">菜单加载失败，请重试。</p>
-                <el-button :loading="retrying" @click="retryMenus">重试</el-button>
+            <div ref="mainContent" class="admin-main__content">
+                <div v-if="auth.menus === null">
+                    <p role="alert">菜单加载失败，请重试。</p>
+                    <el-button :loading="retrying" @click="retryMenus">重试</el-button>
+                </div>
+                <RouterView v-else />
             </div>
-            <RouterView v-else />
         </main>
     </div>
 </template>
@@ -68,8 +75,9 @@ async function retryMenus() {
 .admin-app {
     display: grid;
     grid-template-columns: 244px minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
-    min-height: 100dvh;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100dvh;
+    overflow: hidden;
     background: var(--tk-color-bg-page);
     color: var(--tk-color-text-primary);
 
@@ -83,7 +91,7 @@ async function retryMenus() {
         --admin-sidebar-hover: color-mix(in srgb, var(--admin-sidebar-ink) 5%, transparent);
         --admin-sidebar-selected: color-mix(in srgb, var(--admin-sidebar-ink) 9%, transparent);
 
-        min-height: 640px;
+        overflow-y: auto;
         padding: 12px 12px 24px;
         border-inline-end: 1px solid var(--tk-color-border);
         background: var(--admin-sidebar-paper) url('@/assets/layout/sidebar-ink-landscape.webp') left bottom / 166% 100% no-repeat;
@@ -180,20 +188,27 @@ async function retryMenus() {
 
     .admin-main {
         min-width: 0;
-        padding: 24px clamp(16px, 2.5vw, 36px);
+        overflow: hidden;
         background: var(--tk-color-bg-page) url('@/assets/layout/main-ink-landscape.webp') center / 100% 100% no-repeat;
 
         html.dark & {
             background-image: none;
         }
+
+        .admin-main__content {
+            height: 100%;
+            overflow: auto;
+            padding: 24px clamp(16px, 2.5vw, 36px);
+            scrollbar-width: none;
+        }
     }
 
     @media (max-width: 768px) {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto 1fr;
+        grid-template-rows: auto auto minmax(0, 1fr);
 
         .admin-sidebar {
-            min-height: 0;
+            max-height: 50dvh;
             padding: 4px 16px;
             border-inline-end: 0;
             border-bottom: 1px solid var(--tk-color-border);

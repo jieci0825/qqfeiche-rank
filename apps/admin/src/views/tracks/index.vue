@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { apiErrorMessage } from '@/api/http'
-import { archiveTrack, listTracks, saveTrack } from '@/api/tracks'
-import type { Track } from '@/api/tracks'
+import { apiErrorMessage, archiveTrack, listTracks, saveTrack, type Track } from '@/api'
 
 const tracks = ref<Track[]>([])
 const search = ref('')

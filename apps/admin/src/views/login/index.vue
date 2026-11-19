@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ApiError, apiErrorMessage } from '@/api/http'
+import { ApiError, apiErrorMessage } from '@/api'
 import inkPeaks from '@/assets/login/ink-peaks.webp'
 import { Icon } from '@/icons'
 import { adminDestination } from '@/router'

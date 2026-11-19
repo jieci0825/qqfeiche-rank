@@ -15,8 +15,14 @@ app.use(pinia)
 
 const auth = useAuthStore(pinia)
 // 路由守卫在菜单请求完成后会立即重新匹配当前地址。
-watch(() => auth.menus, (menus, _, onCleanup) => {
-    if (menus) onCleanup(setUpMenuRoutes(router, menus))
+watch(() => auth.menus, (menus, previousMenus, onCleanup) => {
+    if (!menus) return
+    onCleanup(setUpMenuRoutes(router, menus))
+
+    const { path, query, hash, meta } = router.currentRoute.value
+    if (previousMenus && meta.requiresAuth) {
+        void router.replace({ path, query, hash, force: true })
+    }
 }, { flush: 'sync' })
 watch(() => auth.isLoggedIn, loggedIn => {
     if (!loggedIn && router.currentRoute.value.meta.requiresAuth) {

@@ -1,13 +1,23 @@
 import { computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
-import { postAuth } from '@/api/auth'
-import type { AdminMenu, AdminSession, Credentials } from '@/api/auth'
-import { ApiError, readApiResponse, requestApi } from '@/api/http'
-import type { AdminApiPath, ApiOptions } from '@/api/http'
+import {
+    ApiError,
+    authContextPath,
+    postAuth,
+    requestApi,
+    type AdminApiPath,
+    type AdminContext,
+    type AdminSession,
+    type ApiOptions,
+    type Credentials,
+} from '@/api'
 
 export const useAuthStore = defineStore('auth', () => {
     const session = shallowRef<AdminSession | null>(null)
-    const menus = shallowRef<AdminMenu[] | null>(null)
+    const context = shallowRef<AdminContext | null>(null)
+    const menus = computed(() => context.value?.menus ?? null)
+    const roles = computed(() => context.value?.roles ?? [])
+    const permissions = computed(() => new Set(context.value?.permissions))
     const admin = computed(() => session.value?.admin ?? null)
     const isLoggedIn = computed(() => session.value !== null)
     let sessionVersion = 0
@@ -20,7 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
     function setSession(grant: AdminSession | null) {
         sessionVersion++
         session.value = grant
-        menus.value = null
+        context.value = null
         pendingMenus = undefined
     }
 
@@ -88,40 +98,60 @@ export const useAuthStore = defineStore('auth', () => {
             throw new ApiError(401, 'INVALID_SESSION', '请重新登录', 0)
         }
 
-        const response = await requestApi(path, options, token)
-        if (response.status !== 401 || pendingLogout || version !== sessionVersion) {
-            return readApiResponse<T>(response)
+        let unauthorizedError: ApiError
+        try {
+            return await requestApi<T>(path, options, token)
+        } catch (error) {
+            if (!(error instanceof ApiError) || error.status !== 401 || pendingLogout || version !== sessionVersion) {
+                throw error
+            }
+            unauthorizedError = error
         }
 
         // 较晚返回的 401 可以直接使用已续签的令牌。
         if (token === session.value?.accessToken) await refresh()
         const retryToken = session.value?.accessToken
         if (!retryToken || pendingLogout || version !== sessionVersion) {
-            return readApiResponse<T>(response)
+            throw unauthorizedError
         }
 
-        const retry = await requestApi(path, options, retryToken)
-        if (retry.status === 401 && !pendingRefresh && !pendingLogout && retryToken === session.value?.accessToken) {
-            clearSession()
+        try {
+            return await requestApi<T>(path, options, retryToken)
+        } catch (error) {
+            if (error instanceof ApiError && error.status === 401 && !pendingRefresh && !pendingLogout
+                && retryToken === session.value?.accessToken) {
+                clearSession()
+            }
+            throw error
         }
-        return readApiResponse<T>(retry)
     }
 
-    async function loadMenus() {
-        if (menus.value !== null) return
+    function can(permission: string) {
+        return permissions.value.has(permission)
+    }
 
-        if (!pendingMenus) {
-            const version = sessionVersion
-            pendingMenus = request<{ menus: AdminMenu[] }>('/api/admin/auth/me', { signal: AbortSignal.timeout(15_000) })
-                .then(context => {
-                    if (version === sessionVersion && !pendingLogout) menus.value = context.menus
-                })
-                .finally(() => {
-                    if (version === sessionVersion) pendingMenus = undefined
-                })
-        }
+    async function loadMenus(force = false) {
+        if (pendingMenus) return pendingMenus
+        if (!force && context.value !== null) return
+
+        const version = sessionVersion
+        pendingMenus = request<AdminContext>(authContextPath, { signal: AbortSignal.timeout(15_000) })
+            .then(access => {
+                if (version !== sessionVersion || pendingLogout || !session.value) return
+                session.value = { ...session.value, admin: access.admin }
+                context.value = access
+            })
+            .finally(() => {
+                if (version === sessionVersion) pendingMenus = undefined
+            })
         return pendingMenus
     }
 
-    return { admin, isLoggedIn, menus, restoreSession, login, logout, request, loadMenus }
+    async function reloadAccess() {
+        const version = sessionVersion
+        await pendingMenus?.catch(() => undefined)
+        if (version === sessionVersion && session.value && !pendingLogout) await loadMenus(true)
+    }
+
+    return { admin, isLoggedIn, menus, roles, can, restoreSession, login, logout, request, loadMenus, reloadAccess }
 })

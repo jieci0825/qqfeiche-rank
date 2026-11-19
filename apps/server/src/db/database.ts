@@ -4,11 +4,13 @@ import { DatabaseSync } from 'node:sqlite'
 import { authSchema } from './migrations/001-auth.ts'
 import { trackSchema } from './migrations/002-tracks.ts'
 import { rbacSchema, seedRbac } from './migrations/003-rbac.ts'
+import { superAdminRoleProtection } from './migrations/004-protect-super-admin-role.ts'
 
 const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => void }[] = [
     { version: 1, sql: authSchema },
     { version: 2, sql: trackSchema },
     { version: 3, sql: rbacSchema, seed: seedRbac },
+    { version: 4, sql: superAdminRoleProtection },
 ]
 
 export function openDatabase(path: string): DatabaseSync {

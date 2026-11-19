@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import type { AdminMenu } from '@/api/auth'
+import type { AdminMenu } from '@/api'
 import { Icon } from '@/icons'
 
 const props = defineProps<{ menu: AdminMenu }>()

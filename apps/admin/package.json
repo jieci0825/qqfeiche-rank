@@ -13,6 +13,7 @@
     "dependencies": {
         "@iconify-json/ep": "catalog:",
         "@iconify/vue": "catalog:",
+        "alova": "^3.5.5",
         "element-plus": "catalog:",
         "pinia": "catalog:",
         "vue": "catalog:",
