@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Icon } from '@/icons'
 import {
     ApiError,
     apiErrorMessage,
@@ -191,9 +192,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <ManagementTable :error="loadError">
+    <ManagementTable class="admin-tracks" :error="loadError">
         <template #search>
-            <el-input v-model="search" aria-label="搜索赛道名称" placeholder="搜索赛道名称" clearable />
+            <el-input v-model="search" aria-label="搜索赛道名称" placeholder="搜索赛道名称" clearable>
+                <template #prefix>
+                    <Icon icon="ep:search" aria-hidden="true" />
+                </template>
+            </el-input>
             <el-select v-model="status" aria-label="筛选赛道状态">
                 <el-option label="全部状态" value="all" />
                 <el-option label="启用" value="active" />
@@ -201,29 +206,75 @@ onBeforeUnmount(() => {
             </el-select>
         </template>
         <template #actions>
-            <el-button type="primary" :disabled="saving" @click="openEditor()">新增赛道</el-button>
+            <el-button type="primary" :disabled="saving" @click="openEditor()">
+                <template #icon>
+                    <Icon icon="ep:plus" aria-hidden="true" />
+                </template>
+                新增赛道
+            </el-button>
         </template>
 
-        <el-table v-loading="loading" :data="visibleTracks" row-key="id" height="100%" :scrollbar-tabindex="0"
-            :empty-text="search || status !== 'all' ? '没有匹配的赛道' : '暂无赛道'">
-            <el-table-column label="赛道名称" prop="name" min-width="160" show-overflow-tooltip />
-            <el-table-column label="排序值" prop="sortOrder" width="90" />
-            <el-table-column label="状态" width="100">
-                <template #default="{ row }">
-                    <el-tag :type="row.status === 'active' ? 'success' : 'info'">
-                        {{ row.status === 'active' ? '启用' : '已归档' }}
-                    </el-tag>
-                </template>
-            </el-table-column>
-            <el-table-column label="操作" width="150">
-                <template #default="{ row }">
-                    <el-button link type="primary" :disabled="saving" @click="openEditor(row as Track)">编辑</el-button>
-                    <el-button v-if="row.status === 'active'" link type="danger"
-                        :loading="archivingId === row.id" :disabled="archivingId !== undefined"
-                        @click="confirmArchive(row as Track)">归档</el-button>
-                </template>
-            </el-table-column>
-        </el-table>
+        <template #error>
+            <div class="admin-tracks__load-error">
+                <p role="alert">{{ loadError }}</p>
+                <el-button @click="loadTracks">重试</el-button>
+            </div>
+        </template>
+
+        <div v-loading="loading" class="admin-tracks__results" :aria-busy="loading">
+            <div class="admin-tracks__scroll" role="region" aria-label="赛道结果" tabindex="0">
+                <ul v-if="visibleTracks.length" class="admin-tracks__grid" role="list" aria-label="赛道列表">
+                    <li v-for="track in visibleTracks" :key="track.id" class="admin-tracks__card">
+                        <div class="admin-tracks__summary">
+                            <div class="admin-tracks__media">
+                                <el-image v-if="track.coverUrl" :key="track.coverUrl" class="admin-tracks__image"
+                                    :src="track.coverUrl" :alt="`${track.name}赛道封面`" fit="cover" loading="lazy">
+                                    <template #error>
+                                        <div class="admin-tracks__media-empty">
+                                            <Icon icon="ep:picture" aria-hidden="true" />
+                                            <span>封面加载失败</span>
+                                        </div>
+                                    </template>
+                                </el-image>
+                                <div v-else class="admin-tracks__media-empty">
+                                    <Icon icon="ep:picture" aria-hidden="true" />
+                                    <span>暂无封面</span>
+                                </div>
+                            </div>
+
+                            <div class="admin-tracks__identity">
+                                <h2 class="admin-tracks__name">{{ track.name }}</h2>
+                                <p class="admin-tracks__status" :class="{ 'is-active': track.status === 'active' }">
+                                    {{ track.status === 'active' ? '已启用' : '已归档' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="admin-tracks__card-footer">
+                            <p class="admin-tracks__sort">
+                                <span>排序值</span> <strong>{{ track.sortOrder }}</strong>
+                            </p>
+                            <div class="admin-tracks__card-actions">
+                                <el-button size="small" plain :aria-label="`编辑赛道 ${track.name}`" :disabled="saving"
+                                    @click="openEditor(track)">
+                                    <template #icon>
+                                        <Icon icon="ep:edit" aria-hidden="true" />
+                                    </template>
+                                    编辑
+                                </el-button>
+                                <el-button v-if="track.status === 'active'" size="small" type="danger"
+                                    :aria-label="`归档赛道 ${track.name}`"
+                                    :loading="archivingId === track.id" :disabled="archivingId !== undefined"
+                                    @click="confirmArchive(track)">归档</el-button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <p v-else-if="!loading && !loadError" class="admin-tracks__empty" role="status">
+                    {{ search.trim() || status !== 'all' ? '没有匹配的赛道' : '暂无赛道' }}
+                </p>
+            </div>
+        </div>
     </ManagementTable>
 
     <el-dialog v-model="editorOpen" :title="editingId === undefined ? '新增赛道' : '编辑赛道'"
@@ -280,6 +331,184 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped lang="scss">
+.admin-tracks {
+    .admin-tracks__load-error {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .admin-tracks__results {
+        height: 100%;
+
+        .admin-tracks__scroll {
+            height: 100%;
+            overflow: auto;
+
+            &:focus-visible {
+                outline: 2px solid var(--tk-color-focus-ring);
+                outline-offset: -2px;
+            }
+
+            .admin-tracks__grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(min(100%, 224px), 1fr));
+                gap: 16px;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+
+                .admin-tracks__card {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    min-width: 0;
+                    padding: 12px;
+                    border: 1px solid var(--tk-color-border);
+                    border-radius: var(--tk-radius-base);
+                    background: var(--tk-color-bg-surface);
+
+                    .admin-tracks__summary {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+
+                        .admin-tracks__media {
+                            width: 100%;
+                            aspect-ratio: 16 / 9;
+                            overflow: hidden;
+                            border-radius: var(--tk-radius-base);
+                            background: var(--tk-color-bg-page);
+
+                            .admin-tracks__image,
+                            .admin-tracks__media-empty {
+                                width: 100%;
+                                height: 100%;
+                            }
+
+                            .admin-tracks__image {
+                                display: block;
+                            }
+
+                            .admin-tracks__media-empty {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                gap: 6px;
+                                color: var(--tk-color-text-secondary);
+                                font-size: 12px;
+                                line-height: 1.2;
+                                text-align: center;
+
+                                svg {
+                                    font-size: 20px;
+                                }
+                            }
+                        }
+
+                        .admin-tracks__identity {
+                            display: flex;
+                            flex-wrap: wrap;
+                            align-items: center;
+                            gap: 4px 12px;
+
+                            .admin-tracks__name {
+                                flex: 1 1 6em;
+                                min-width: 0;
+                                margin: 0;
+                                font-size: 18px;
+                                line-height: 1.35;
+                                overflow-wrap: anywhere;
+                            }
+
+                            .admin-tracks__status {
+                                display: flex;
+                                align-items: center;
+                                gap: 5px;
+                                margin: 0;
+                                color: var(--tk-color-text-secondary);
+                                font-size: 13px;
+                                line-height: 1.3;
+                                overflow-wrap: anywhere;
+
+                                &::before {
+                                    flex: none;
+                                    width: 6px;
+                                    height: 6px;
+                                    border-radius: 50%;
+                                    background: var(--tk-color-text-tertiary);
+                                    content: '';
+                                }
+
+                                &.is-active::before {
+                                    background: color-mix(in srgb, var(--tk-color-success) 70%, var(--tk-color-text-primary));
+                                }
+                            }
+                        }
+                    }
+
+                    .admin-tracks__card-footer {
+                        display: flex;
+                        flex-wrap: wrap;
+                        align-items: center;
+                        gap: 6px 8px;
+                        margin-block-start: auto;
+                        padding-block-start: 8px;
+                        border-top: 1px solid var(--tk-color-border-disabled);
+
+                        .admin-tracks__sort {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 2px 5px;
+                            min-width: 0;
+                            margin: 0;
+                            color: var(--tk-color-text-secondary);
+                            font-size: 13px;
+                            font-variant-numeric: tabular-nums;
+                            line-height: 1.4;
+                            overflow-wrap: anywhere;
+
+                            strong {
+                                min-width: 0;
+                                color: var(--tk-color-text-primary);
+                                font-weight: 600;
+                            }
+                        }
+
+                        .admin-tracks__card-actions {
+                            display: flex;
+                            flex-wrap: wrap;
+                            justify-content: flex-end;
+                            gap: 4px;
+                            margin-inline-start: auto;
+
+                            .el-button {
+                                min-height: 28px;
+                                margin-inline-start: 0;
+
+                                &:focus-visible {
+                                    outline: 2px solid var(--tk-color-focus-ring);
+                                    outline-offset: 2px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            .admin-tracks__empty {
+                margin: 0;
+                padding: 40px 16px;
+                color: var(--tk-color-text-secondary);
+                text-align: center;
+            }
+        }
+    }
+}
+
 .admin-tracks__form {
     display: grid;
     gap: 16px;
