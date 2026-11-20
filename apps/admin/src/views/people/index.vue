@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import DataManagement from '../data/DataManagement.vue'
+</script>
+
 <template>
-    <div />
+    <DataManagement resource="drivers" />
 </template>

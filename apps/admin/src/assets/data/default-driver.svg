@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <title>默认车手头像</title>
+  <defs>
+    <linearGradient id="background" x1="12" y1="4" x2="116" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3b3c3c"/>
+      <stop offset="1" stop-color="#181b1e"/>
+    </linearGradient>
+    <linearGradient id="helmet" x1="42" y1="26" x2="93" y2="84" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ede7d8"/>
+      <stop offset="1" stop-color="#999b98"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#background)" d="M0 0h128v128H0z"/>
+  <path stroke="#ead5a1" stroke-opacity=".13" d="m-20 108 148-88m-138 108L138 40m-99 88 99-59"/>
+  <path fill="#555b5d" d="m15 128 8-22c5-12 20-19 41-19s36 7 41 19l8 22H15Z"/>
+  <path fill="#c7c5c0" d="m48 91 16 18 16-18-16 6-16-6Z"/>
+  <path fill="url(#helmet)" d="M33 57c0-23 12-37 31-37s31 14 31 37v12c0 14-14 27-31 27S33 83 33 69V57Z"/>
+  <path fill="#20272d" d="m34 50 18-5 41 4-4 22-19 9-29-8-7-22Z"/>
+  <path stroke="#ead5a1" stroke-width="2" d="m42 55 18-3 24 3"/>
+  <path fill="#d6c496" d="m63 23-8 20 9-3 8-16-9-1Z"/>
+  <path stroke="#ede7d8" stroke-opacity=".45" d="M1 1h126v126H1z"/>
+</svg>

@@ -265,12 +265,7 @@ onBeforeUnmount(() => {
                             </div>
                             <div class="admin-tracks__card-actions">
                                 <el-button size="small" plain :aria-label="`编辑赛道 ${track.name}`" :disabled="saving"
-                                    @click="openEditor(track)">
-                                    <template #icon>
-                                        <Icon icon="ep:edit" aria-hidden="true" />
-                                    </template>
-                                    编辑
-                                </el-button>
+                                    @click="openEditor(track)">编辑</el-button>
                                 <el-button v-if="track.status !== 'archived'" size="small" type="danger"
                                     :aria-label="`归档赛道 ${track.name}`"
                                     :loading="archivingId === track.id" :disabled="archivingId !== undefined"

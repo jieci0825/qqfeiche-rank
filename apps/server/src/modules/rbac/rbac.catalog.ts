@@ -1,3 +1,5 @@
+import type { DataResourceKey } from '../data/data.resources.ts'
+
 export const superAdminRoleCode = 'super-admin'
 
 type MenuDefinition = {
@@ -77,3 +79,4 @@ export const initialRbacMenus = [
 ] as const satisfies readonly MenuDefinition[]
 
 export type PermissionCode = (typeof initialRbacMenus)[number]['permissions'][number]['code']
+    | `${DataResourceKey}:${'read' | 'create' | 'update' | 'archive'}`

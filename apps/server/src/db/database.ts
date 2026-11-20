@@ -12,6 +12,11 @@ import { trackClassificationSchema } from './migrations/008-track-classification
 import { trackDisabledStatusSchema } from './migrations/009-track-disabled-status.ts'
 import { dropTrackCategories } from './migrations/010-drop-track-categories.ts'
 import { dropTrackSortOrder } from './migrations/011-drop-track-sort-order.ts'
+import { teamsMenu } from './migrations/012-teams-menu.ts'
+import { dataManagementSchema } from './migrations/013-data-management.ts'
+import { optionalDataImages } from './migrations/014-optional-data-images.ts'
+import { outlineMenuIcons } from './migrations/015-outline-menu-icons.ts'
+import { carEcusSchema, migrateCarEcus } from './migrations/016-car-ecus.ts'
 
 const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => void }[] = [
     { version: 1, sql: authSchema },
@@ -25,6 +30,11 @@ const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => v
     { version: 9, sql: trackDisabledStatusSchema },
     { version: 10, sql: dropTrackCategories },
     { version: 11, sql: dropTrackSortOrder },
+    { version: 12, sql: teamsMenu },
+    { version: 13, sql: dataManagementSchema },
+    { version: 14, sql: optionalDataImages },
+    { version: 15, sql: outlineMenuIcons },
+    { version: 16, sql: carEcusSchema, seed: migrateCarEcus },
 ]
 
 export function openDatabase(path: string): DatabaseSync {

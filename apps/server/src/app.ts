@@ -2,6 +2,8 @@ import Koa from 'koa'
 import { handleErrors } from './http/errors.ts'
 import { createAuthRoutes } from './modules/auth/auth.routes.ts'
 import type { AuthService } from './modules/auth/auth.service.ts'
+import { createDataRoutes } from './modules/data/data.routes.ts'
+import type { DataStore } from './modules/data/data.store.ts'
 import { createRbacRoutes } from './modules/rbac/rbac.routes.ts'
 import type { RbacStore } from './modules/rbac/rbac.store.ts'
 import { createTrackCoverRoutes } from './modules/tracks/track-cover.routes.ts'
@@ -13,18 +15,20 @@ interface AppOptions {
     auth: AuthService
     rbac: RbacStore
     tracks: TrackStore
+    data: DataStore
     cosUploads?: CosUploads
     adminOrigins: ReadonlySet<string>
     trustProxy: boolean
 }
 
-export function createApp({ auth, rbac, tracks, cosUploads, adminOrigins, trustProxy }: AppOptions) {
+export function createApp({ auth, rbac, tracks, data, cosUploads, adminOrigins, trustProxy }: AppOptions) {
     const app = new Koa({ proxy: trustProxy, maxIpsCount: 1 })
     app.use(handleErrors)
     app.use(createAuthRoutes(auth, adminOrigins, rbac))
     app.use(createRbacRoutes(rbac, auth))
     app.use(createTrackCoverRoutes(auth, rbac, cosUploads))
     app.use(createTrackRoutes(tracks, auth, rbac, cosUploads))
+    app.use(createDataRoutes(data, auth, rbac, cosUploads))
 
     app.use(ctx => {
         if (ctx.path === '/api/health' && (ctx.method === 'GET' || ctx.method === 'HEAD')) {
