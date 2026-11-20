@@ -36,7 +36,7 @@ qqfeiche-rank/
 - 开发端口：`9432`
 - 访问地址：`http://localhost:9432/`
 - 页面：`/`、`/tracks`、`/tags`、`/people`、`/records`、`/records/new`、`/logs`、`/login`
-- 登录后可进入概览和赛道管理。赛道管理支持搜索、状态筛选、新增、编辑、排序和归档。
+- 登录后可进入概览和赛道管理。赛道管理支持搜索、状态筛选、新增、编辑、启用、禁用和归档。
 
 ### server：服务端
 
@@ -104,12 +104,16 @@ qqfeiche-rank/
 
 | 接口 | 权限码 | 用途 |
 | --- | --- | --- |
-| `GET /api/admin/tracks` | `tracks:read` | 按排序值和名称返回 `{ tracks }` |
+| `GET /api/admin/tracks` | `tracks:read` | 按赛道名称排序，返回 `{ tracks }` |
 | `POST /api/admin/tracks` | `tracks:create` | 新增赛道，返回 `{ track }` |
 | `PUT /api/admin/tracks/:id` | `tracks:update` | 修改赛道，返回 `{ track }` |
 | `POST /api/admin/tracks/:id/archive` | `tracks:archive` | 归档赛道，返回 `204` |
 
-新增和修改接受 JSON `{ name, sortOrder, coverUploadTicket? }`。排序值为整数且越小越靠前。省略 `coverUploadTicket` 则保留原封面（新增时无封面），传 `null` 则移除封面，传上传凭证则设置新封面。赛道响应包含 `coverFileId` 和用于展示的 `coverUrl`，无封面时两者均为 `null`。
+新增和修改接受 JSON `{ name, stars?, status?, coverUploadTicket? }`。星级 `stars` 可传 1 到 7 的整数或 `null`，修改时省略则保留原值。赛道响应包含 `stars`，未录入时为 `null`。
+
+状态 `status` 可传 `active`（启用）或 `disabled`（禁用）。省略时，新赛道默认启用，已有赛道保留原状态。归档须使用归档接口，已归档赛道的状态固定为 `archived`。
+
+省略 `coverUploadTicket` 则保留原封面（新增时无封面），传 `null` 则移除封面，传上传凭证则设置新封面。赛道响应包含 `coverFileId` 和用于展示的 `coverUrl`，无封面时两者均为 `null`。
 
 #### 赛道封面直传 COS
 

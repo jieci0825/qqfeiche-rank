@@ -8,6 +8,10 @@ import { superAdminRoleProtection } from './migrations/004-protect-super-admin-r
 import { trackCoverKeysSchema } from './migrations/005-track-cover-keys.ts'
 import { filesSchema } from './migrations/006-files.ts'
 import { dropTrackDescription } from './migrations/007-drop-track-description.ts'
+import { trackClassificationSchema } from './migrations/008-track-classification.ts'
+import { trackDisabledStatusSchema } from './migrations/009-track-disabled-status.ts'
+import { dropTrackCategories } from './migrations/010-drop-track-categories.ts'
+import { dropTrackSortOrder } from './migrations/011-drop-track-sort-order.ts'
 
 const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => void }[] = [
     { version: 1, sql: authSchema },
@@ -17,6 +21,10 @@ const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => v
     { version: 5, sql: trackCoverKeysSchema },
     { version: 6, sql: filesSchema },
     { version: 7, sql: dropTrackDescription },
+    { version: 8, sql: trackClassificationSchema },
+    { version: 9, sql: trackDisabledStatusSchema },
+    { version: 10, sql: dropTrackCategories },
+    { version: 11, sql: dropTrackSortOrder },
 ]
 
 export function openDatabase(path: string): DatabaseSync {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElSwitch } from 'element-plus'
 import { Icon } from '@/icons'
 import {
     ApiError,
@@ -16,13 +16,18 @@ import ManagementTable from '../access/ManagementTable.vue'
 const tracks = ref<Track[]>([])
 const search = ref('')
 const status = ref<Track['status'] | 'all'>('all')
+const statusLabels: Record<Track['status'], string> = { active: '已启用', disabled: '已禁用', archived: '已归档' }
 const loading = ref(false)
 const loadError = ref('')
 let listRequest: AbortController | undefined
 
 const editorOpen = ref(false)
 const editingId = ref<number>()
-const form = reactive({ name: '', sortOrder: '0' })
+const form = reactive({
+    name: '',
+    status: 'active' as Track['status'],
+    stars: null as number | null,
+})
 const saving = ref(false)
 const saveError = ref('')
 let saveRequest: AbortController | undefined
@@ -71,9 +76,10 @@ function openEditor(track?: Track) {
     clearCoverSelection()
     editingId.value = track?.id
     form.name = track?.name ?? ''
+    form.status = track?.status ?? 'active'
+    form.stars = track?.stars ?? null
     existingCoverUrl.value = track?.coverUrl ?? null
     removeExistingCover.value = false
-    form.sortOrder = String(track?.sortOrder ?? 0)
     saveError.value = ''
     editorOpen.value = true
 }
@@ -120,9 +126,8 @@ async function submit() {
     if (saving.value || coverError.value) return
 
     const name = form.name.trim()
-    const sortOrder = Number(form.sortOrder)
-    if (!name || !form.sortOrder.trim() || !Number.isSafeInteger(sortOrder)) {
-        saveError.value = '请输入赛道名称和整数排序值'
+    if (!name) {
+        saveError.value = '请输入赛道名称'
         return
     }
 
@@ -140,7 +145,8 @@ async function submit() {
         }
         await saveTrack({
             name,
-            sortOrder,
+            status: form.status === 'archived' ? undefined : form.status,
+            stars: form.stars,
             coverUploadTicket: coverTicket ?? (removeExistingCover.value ? null : undefined),
         }, editingId.value, request.signal)
         request.signal.throwIfAborted()
@@ -201,8 +207,7 @@ onBeforeUnmount(() => {
             </el-input>
             <el-select v-model="status" aria-label="筛选赛道状态">
                 <el-option label="全部状态" value="all" />
-                <el-option label="启用" value="active" />
-                <el-option label="已归档" value="archived" />
+                <el-option v-for="(label, value) in statusLabels" :key="value" :label="label" :value="value" />
             </el-select>
         </template>
         <template #actions>
@@ -245,15 +250,19 @@ onBeforeUnmount(() => {
                             <div class="admin-tracks__identity">
                                 <h2 class="admin-tracks__name">{{ track.name }}</h2>
                                 <p class="admin-tracks__status" :class="{ 'is-active': track.status === 'active' }">
-                                    {{ track.status === 'active' ? '已启用' : '已归档' }}
+                                    {{ statusLabels[track.status] }}
                                 </p>
                             </div>
                         </div>
 
                         <div class="admin-tracks__card-footer">
-                            <p class="admin-tracks__sort">
-                                <span>排序值</span> <strong>{{ track.sortOrder }}</strong>
-                            </p>
+                            <div class="admin-tracks__stars">
+                                <span v-if="track.stars !== null" class="admin-tracks__rating">
+                                    <Icon icon="ep:star-filled" aria-hidden="true" />
+                                    {{ track.stars }} 星
+                                </span>
+                                <span v-else>星级未录入</span>
+                            </div>
                             <div class="admin-tracks__card-actions">
                                 <el-button size="small" plain :aria-label="`编辑赛道 ${track.name}`" :disabled="saving"
                                     @click="openEditor(track)">
@@ -262,7 +271,7 @@ onBeforeUnmount(() => {
                                     </template>
                                     编辑
                                 </el-button>
-                                <el-button v-if="track.status === 'active'" size="small" type="danger"
+                                <el-button v-if="track.status !== 'archived'" size="small" type="danger"
                                     :aria-label="`归档赛道 ${track.name}`"
                                     :loading="archivingId === track.id" :disabled="archivingId !== undefined"
                                     @click="confirmArchive(track)">归档</el-button>
@@ -285,8 +294,17 @@ onBeforeUnmount(() => {
             <el-form-item class="admin-tracks__field" label="赛道名称" for="track-name">
                 <el-input id="track-name" v-model="form.name" maxlength="100" />
             </el-form-item>
-            <el-form-item class="admin-tracks__field" label="排序值（越小越靠前）" for="track-sort">
-                <el-input id="track-sort" v-model="form.sortOrder" type="number" step="1" />
+            <el-form-item class="admin-tracks__field" label="赛道状态">
+                <el-switch v-if="form.status !== 'archived'" v-model="form.status" aria-label="启用赛道"
+                    active-value="active" inactive-value="disabled" active-text="启用" inactive-text="禁用"
+                    inline-prompt :width="56" />
+                <span v-else>{{ statusLabels.archived }}</span>
+            </el-form-item>
+            <el-form-item class="admin-tracks__field" label="赛道星级" for="track-stars">
+                <el-select id="track-stars" v-model="form.stars" placeholder="请选择星级" clearable
+                    :value-on-clear="() => null">
+                    <el-option v-for="stars in 7" :key="stars" :label="`${stars} 星`" :value="stars" />
+                </el-select>
             </el-form-item>
             <el-form-item class="admin-tracks__field" label="赛道封面（选填）">
                 <div class="admin-tracks__cover">
@@ -459,22 +477,26 @@ onBeforeUnmount(() => {
                         padding-block-start: 8px;
                         border-top: 1px solid var(--tk-color-border-disabled);
 
-                        .admin-tracks__sort {
+                        .admin-tracks__stars {
                             display: flex;
-                            flex-wrap: wrap;
-                            gap: 2px 5px;
-                            min-width: 0;
-                            margin: 0;
+                            align-items: center;
+                            min-height: 20px;
                             color: var(--tk-color-text-secondary);
                             font-size: 13px;
-                            font-variant-numeric: tabular-nums;
                             line-height: 1.4;
-                            overflow-wrap: anywhere;
 
-                            strong {
-                                min-width: 0;
+                            .admin-tracks__rating {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 4px;
                                 color: var(--tk-color-text-primary);
                                 font-weight: 600;
+                                font-variant-numeric: tabular-nums;
+
+                                svg {
+                                    color: var(--tk-color-warning-hover);
+                                    font-size: 15px;
+                                }
                             }
                         }
 

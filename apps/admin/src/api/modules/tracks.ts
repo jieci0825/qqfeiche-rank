@@ -1,17 +1,20 @@
 import { useAuthStore } from '@/stores/auth'
 import { ApiError } from '../core/errors'
 
+type TrackStatus = 'active' | 'disabled' | 'archived'
+
 export interface TrackInput {
     name: string
+    stars: number | null
     coverUploadTicket?: string | null
-    sortOrder: number
+    status?: Exclude<TrackStatus, 'archived'>
 }
 
-export interface Track extends Omit<TrackInput, 'coverUploadTicket'> {
+export interface Track extends Omit<TrackInput, 'coverUploadTicket' | 'status'> {
     id: number
     coverFileId: number | null
     coverUrl: string | null
-    status: 'active' | 'archived'
+    status: TrackStatus
     createdAt: string
     updatedAt: string
 }

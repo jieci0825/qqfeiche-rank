@@ -4,16 +4,20 @@ import { HttpError } from '../../http/errors.ts'
 import { createFileStore, type UploadedFile } from '../files/files.store.ts'
 import type { AuthorizedActor } from '../rbac/rbac.store.ts'
 
+type TrackStatus = 'active' | 'disabled' | 'archived'
+
 export interface TrackInput {
     name: string
+    stars?: number | null
     coverFile?: UploadedFile | null
-    sortOrder: number
+    status?: Exclude<TrackStatus, 'archived'>
 }
 
-interface Track extends Omit<TrackInput, 'coverFile'> {
+interface Track extends Omit<TrackInput, 'coverFile' | 'stars' | 'status'> {
     id: number
+    stars: number | null
     coverFileId: number | null
-    status: 'active' | 'archived'
+    status: TrackStatus
     createdAt: string
     updatedAt: string
 }
@@ -29,8 +33,8 @@ interface TrackActor {
 
 export type TrackStore = ReturnType<typeof createTrackStore>
 
-const columns = `id, name, cover_file_id AS coverFileId, status,
-    sort_order AS sortOrder, created_at AS createdAt, updated_at AS updatedAt`
+const columns = `id, name, stars, cover_file_id AS coverFileId, status,
+    created_at AS createdAt, updated_at AS updatedAt`
 const selectWithCover = `
     SELECT track.*, files.object_key AS coverObjectKey
     FROM (SELECT ${columns} FROM tracks) AS track
@@ -39,16 +43,16 @@ const selectWithCover = `
 
 export function createTrackStore(db: DatabaseSync) {
     const files = createFileStore(db)
-    const list = db.prepare(`${selectWithCover} ORDER BY track.sortOrder, track.name, track.id`)
+    const list = db.prepare(`${selectWithCover} ORDER BY track.name`)
     const byId = db.prepare(`SELECT ${columns} FROM tracks WHERE id = ?`)
     const byIdWithCover = db.prepare(`${selectWithCover} WHERE track.id = ?`)
     const byName = db.prepare('SELECT id FROM tracks WHERE name = ?')
     const insert = db.prepare(`
-        INSERT INTO tracks (name, cover_file_id, sort_order, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?) RETURNING ${columns}
+        INSERT INTO tracks (name, stars, cover_file_id, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?) RETURNING ${columns}
     `)
     const update = db.prepare(`
-        UPDATE tracks SET name = ?, cover_file_id = ?, sort_order = ?, updated_at = ?
+        UPDATE tracks SET name = ?, stars = ?, cover_file_id = ?, status = ?, updated_at = ?
         WHERE id = ? RETURNING ${columns}
     `)
     const archive = db.prepare(`
@@ -83,19 +87,24 @@ export function createTrackStore(db: DatabaseSync) {
             return writeTransaction(db, () => {
                 const { adminId } = actor.authorize()
                 const before = id === undefined ? null : requireTrack(id)
+                if (before?.status === 'archived' && input.status !== undefined) {
+                    throw new HttpError(409, 'TRACK_ARCHIVED', '赛道已归档，无法更改启用状态')
+                }
                 const existing = byName.get(input.name)
                 if (existing && existing.id !== id) {
                     throw new HttpError(409, 'TRACK_NAME_EXISTS', '赛道名称已存在')
                 }
 
-                const { name, coverFile, sortOrder } = input
+                const { name, coverFile } = input
+                const stars = input.stars === undefined ? before?.stars ?? null : input.stars
+                const status = input.status ?? before?.status ?? 'active'
                 const now = new Date().toISOString()
                 const coverFileId = coverFile === undefined
                     ? before?.coverFileId ?? null
                     : coverFile && files.registerUpload(coverFile, adminId, now)
                 const after = (id === undefined
-                    ? insert.get(name, coverFileId, sortOrder, now, now)
-                    : update.get(name, coverFileId, sortOrder, now, id)) as unknown as Track
+                    ? insert.get(name, stars, coverFileId, status, now, now)
+                    : update.get(name, stars, coverFileId, status, now, id)) as unknown as Track
                 recordChange(id === undefined ? 'track.create' : 'track.update', { adminId, ip: actor.ip }, before, after)
                 return byIdWithCover.get(after.id) as unknown as TrackWithCover
             })

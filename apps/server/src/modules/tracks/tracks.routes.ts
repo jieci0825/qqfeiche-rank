@@ -8,7 +8,7 @@ import { permissionActor } from '../rbac/rbac.guard.ts'
 import type { RbacStore } from '../rbac/rbac.store.ts'
 import type { CosUploads } from '../uploads/cos-uploads.ts'
 import { confirmTrackCover } from './track-cover.routes.ts'
-import type { TrackStore, TrackWithCover } from './tracks.store.ts'
+import type { TrackInput, TrackStore, TrackWithCover } from './tracks.store.ts'
 
 const tracksPath = '/api/admin/tracks'
 const trackPath = /^\/api\/admin\/tracks\/([1-9]\d*)(\/archive)?$/
@@ -70,21 +70,22 @@ function trackPermission(method: string, isArchive: boolean): PermissionCode {
     return isArchive ? 'tracks:archive' : 'tracks:create'
 }
 
-function parseTrack(body: Record<string, unknown>) {
+function parseTrack(body: Record<string, unknown>): TrackInput & { coverUploadTicket?: string | null } {
     const name = typeof body.name === 'string' ? body.name.trim() : ''
     if (!name || name.length > 100) {
         throw new HttpError(400, 'INVALID_TRACK_INPUT', '请输入 1 至 100 字的赛道名称')
     }
 
-    const sortOrder = body.sortOrder
-    if (typeof sortOrder !== 'number' || !Number.isSafeInteger(sortOrder)) {
-        throw new HttpError(400, 'INVALID_TRACK_INPUT', '排序值必须是有效整数')
+    const { stars, status, coverUploadTicket } = body
+    if (stars != null && (typeof stars !== 'number' || !Number.isInteger(stars) || stars < 1 || stars > 7)) {
+        throw new HttpError(400, 'INVALID_TRACK_INPUT', '赛道星级必须是 1 至 7 的整数')
     }
-
-    const { coverUploadTicket } = body
+    if (status !== undefined && status !== 'active' && status !== 'disabled') {
+        throw new HttpError(400, 'INVALID_TRACK_INPUT', '赛道状态只能设置为启用或禁用')
+    }
     if ('coverUrl' in body || (coverUploadTicket != null && typeof coverUploadTicket !== 'string')) {
         throw new HttpError(400, 'INVALID_TRACK_INPUT', '封面须通过图片上传设置')
     }
 
-    return { name, sortOrder, coverUploadTicket }
+    return { name, stars, status, coverUploadTicket }
 }
