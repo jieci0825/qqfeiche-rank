@@ -197,7 +197,7 @@ function clearPassword() {
             <!-- @vue-generic {User} -->
             <el-table-column v-if="showActions" label="操作" width="280">
                 <template #default="{ row }">
-                    <div class="user-row-actions">
+                    <div class="management-table__row-actions">
                         <el-button v-if="auth.can('users:update')" link type="primary" :disabled="saving"
                             @click="openEditor({ kind: 'edit', user: row })">编辑</el-button>
                         <el-button v-if="auth.can('users:assign-roles')" link type="primary" :disabled="saving"
@@ -247,11 +247,3 @@ function clearPassword() {
         </template>
     </ManagementDialog>
 </template>
-
-<style scoped lang="scss">
-.user-row-actions {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-}
-</style>

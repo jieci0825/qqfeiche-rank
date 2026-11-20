@@ -91,6 +91,18 @@ defineProps<{ error: string; compact?: boolean }>()
         .management-table__viewport {
             flex: 1;
             min-height: 0;
+
+            :deep(.management-table__row-actions) {
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 12px;
+
+                > .el-button {
+                    flex: none;
+                    margin-inline-start: 0;
+                }
+            }
         }
     }
 

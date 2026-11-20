@@ -204,17 +204,19 @@ async function confirmDelete(role: Role) {
                 <template #default="{ row }">{{ row.permissions.length }}</template>
             </el-table-column>
             <!-- @vue-generic {Role} -->
-            <el-table-column label="操作" width="176">
+            <el-table-column label="操作" width="208">
                 <template #default="{ row }">
-                    <el-button v-if="canManage(row, 'roles:update')" link type="primary" :disabled="saving"
-                        @click="openEditor(row)">编辑</el-button>
-                    <el-button class="roles-page__permission-action" link type="primary" :disabled="saving"
-                        @click="openPermissions(row)">
-                        {{ canManage(row, 'roles:assign-permissions') ? '分配权限' : '查看权限' }}
-                    </el-button>
-                    <el-button v-if="canManage(row, 'roles:delete')" link type="danger"
-                        :loading="deletingId === row.id" :disabled="deletingId !== undefined"
-                        @click="confirmDelete(row)">删除</el-button>
+                    <div class="management-table__row-actions">
+                        <el-button v-if="canManage(row, 'roles:update')" link type="primary" :disabled="saving"
+                            @click="openEditor(row)">编辑</el-button>
+                        <el-button class="roles-page__permission-action" link type="primary" :disabled="saving"
+                            @click="openPermissions(row)">
+                            {{ canManage(row, 'roles:assign-permissions') ? '分配权限' : '查看权限' }}
+                        </el-button>
+                        <el-button v-if="canManage(row, 'roles:delete')" link type="danger"
+                            :loading="deletingId === row.id" :disabled="deletingId !== undefined"
+                            @click="confirmDelete(row)">删除</el-button>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
