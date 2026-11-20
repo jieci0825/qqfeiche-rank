@@ -7,6 +7,7 @@ import { AuthService } from './modules/auth/auth.service.ts'
 import { createSqliteAuthStore } from './modules/auth/sqlite-auth.store.ts'
 import { createDataStore } from './modules/data/data.store.ts'
 import { createRbacStore } from './modules/rbac/rbac.store.ts'
+import { createRecordStore } from './modules/records/records.store.ts'
 import { createTrackStore } from './modules/tracks/tracks.store.ts'
 import { createCosUploads } from './modules/uploads/cos-uploads.ts'
 
@@ -27,6 +28,7 @@ async function main(): Promise<void> {
             rbac: createRbacStore(db),
             tracks: createTrackStore(db),
             data: createDataStore(db),
+            records: createRecordStore(db),
             cosUploads: cos && createCosUploads(cos),
             adminOrigins,
             trustProxy,

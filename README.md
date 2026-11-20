@@ -35,7 +35,7 @@ qqfeiche-rank/
 - Sass 样式，统一放在 `admin/src/styles`
 - 开发端口：`9432`
 - 访问地址：`http://localhost:9432/`
-- 页面：`/`、`/tracks`、`/tags`、`/people`、`/records`、`/records/new`、`/logs`、`/login`
+- 页面：`/`、`/tracks`、`/tags`、`/people`、`/records`、`/logs`、`/login`
 - 登录后可进入概览和赛道管理。赛道管理支持搜索、状态筛选、新增、编辑、启用、禁用和归档。
 
 ### server：服务端

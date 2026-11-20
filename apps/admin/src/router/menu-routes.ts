@@ -25,15 +25,6 @@ export function setUpMenuRoutes(router: Router, menus: AdminMenu[]) {
                     component: menuPages[`/src/views${menu.path}/index.vue`] ?? placeholderPage,
                     meta: { title: menu.title, menuTrail },
                 }))
-
-                if (menu.key === 'records') {
-                    removeRoutes.push(router.addRoute('admin-layout', {
-                        path: `${menu.path}/new`,
-                        name: 'admin-record-new',
-                        component: () => import('@/views/records/new/index.vue'),
-                        meta: { title: '录入成绩', menuTrail },
-                    }))
-                }
             }
 
             register(menu.children, menuTrail)

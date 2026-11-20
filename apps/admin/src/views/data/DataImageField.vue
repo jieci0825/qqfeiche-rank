@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 
-const props = defineProps<{ label: string; existingUrl?: string | null; fallbackUrl: string; disabled: boolean }>()
+const props = defineProps<{ label: string; existingUrl?: string | null; fallbackUrl?: string; disabled: boolean }>()
 const file = defineModel<File | null>({ required: true })
 const error = defineModel<string>('error', { required: true })
 const input = ref<HTMLInputElement>()
@@ -44,13 +44,15 @@ function selectImage(event: Event) {
 
 <template>
     <div class="data-image-field">
-        <el-image class="data-image-field__preview" :src="customImage || fallbackUrl" fit="cover"
+        <el-image v-if="customImage || fallbackUrl" class="data-image-field__preview" :src="customImage || fallbackUrl" fit="cover"
             :alt="customImage ? `${label}预览` : `默认${label}`">
             <template v-if="customImage" #error>
                 <span v-if="preview" class="data-image-field__hint">无法预览此图片</span>
-                <el-image v-else class="data-image-field__preview" :src="fallbackUrl" fit="cover" :alt="`默认${label}`" />
+                <el-image v-else-if="fallbackUrl" class="data-image-field__preview" :src="fallbackUrl" fit="cover" :alt="`默认${label}`" />
+                <span v-else class="data-image-field__hint">{{ label }}加载失败</span>
             </template>
         </el-image>
+        <div v-else class="data-image-field__preview data-image-field__preview--empty">暂无{{ label }}</div>
         <input ref="input" type="file" :accept="imageTypes.join(',')" :disabled="disabled" hidden @change="selectImage" />
         <div class="data-image-field__controls">
             <el-button :aria-describedby="hintId" :aria-label="`${customImage ? '更换' : '选择'}${label}`"
@@ -82,6 +84,12 @@ function selectImage(event: Event) {
         width: 168px;
         max-width: 100%;
         height: 96px;
+
+        &.data-image-field__preview--empty {
+            border-radius: var(--tk-radius-base);
+            background: var(--el-fill-color-light);
+            color: var(--tk-color-text-secondary);
+        }
     }
 
     .data-image-field__controls {

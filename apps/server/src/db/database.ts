@@ -17,6 +17,8 @@ import { dataManagementSchema } from './migrations/013-data-management.ts'
 import { optionalDataImages } from './migrations/014-optional-data-images.ts'
 import { outlineMenuIcons } from './migrations/015-outline-menu-icons.ts'
 import { carEcusSchema, migrateCarEcus } from './migrations/016-car-ecus.ts'
+import { recordsSchema } from './migrations/017-records.ts'
+import { recordTimeCentiseconds } from './migrations/018-record-time-centiseconds.ts'
 
 const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => void }[] = [
     { version: 1, sql: authSchema },
@@ -35,6 +37,8 @@ const migrations: { version: number; sql: string; seed?: (db: DatabaseSync) => v
     { version: 14, sql: optionalDataImages },
     { version: 15, sql: outlineMenuIcons },
     { version: 16, sql: carEcusSchema, seed: migrateCarEcus },
+    { version: 17, sql: recordsSchema },
+    { version: 18, sql: recordTimeCentiseconds },
 ]
 
 export function openDatabase(path: string): DatabaseSync {

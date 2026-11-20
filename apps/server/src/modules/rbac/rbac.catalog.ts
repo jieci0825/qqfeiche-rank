@@ -80,3 +80,4 @@ export const initialRbacMenus = [
 
 export type PermissionCode = (typeof initialRbacMenus)[number]['permissions'][number]['code']
     | `${DataResourceKey}:${'read' | 'create' | 'update' | 'archive'}`
+    | `records:${'create' | 'update' | 'void'}`

@@ -2,17 +2,13 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { Icon } from '@/icons'
 import { mockTrackRecords } from '@/data/records'
-import type { RecordCategory, TrackLength } from '@/data/records'
+import type { TrackLength } from '@/data/records'
 import RecordCard from './components/RecordCard.vue'
 
-type RecordMode = 'all' | RecordCategory
+type LengthFilter = 'all' | TrackLength
 
-const modeOptions: { label: string; value: RecordMode }[] = [
+const lengthOptions: { label: string; value: LengthFilter }[] = [
     { label: '全部', value: 'all' },
-    { label: '排位', value: 'ranked' },
-    { label: '巅峰', value: 'pinnacle' },
-]
-const lengthOptions: { label: string; value: TrackLength }[] = [
     { label: '短图', value: 'short' },
     { label: '中图', value: 'medium' },
     { label: '长图', value: 'long' },
@@ -32,8 +28,7 @@ const starsOpen = ref(false)
 const activeStarIndex = ref(0)
 
 const filters = reactive({
-    mode: 'all' as RecordMode,
-    length: '' as TrackLength | '',
+    length: 'all' as LengthFilter,
     stars: '',
     keyword: '',
 })
@@ -41,8 +36,7 @@ const filteredRecords = computed(() => {
     const keyword = filters.keyword.normalize('NFKC').trim().toLocaleLowerCase()
 
     return mockTrackRecords.filter(record => {
-        if (filters.mode !== 'all' && record.category !== filters.mode) return false
-        if (filters.length && record.length !== filters.length) return false
+        if (filters.length !== 'all' && record.length !== filters.length) return false
         if (filters.stars && record.track.stars !== Number(filters.stars)) return false
 
         const searchText = [record.track.name, record.driver.name, record.team.name]
@@ -52,11 +46,7 @@ const filteredRecords = computed(() => {
 })
 
 function resetFilters() {
-    Object.assign(filters, { mode: 'all', length: '', stars: '', keyword: '' })
-}
-
-function toggleLength(length: TrackLength) {
-    filters.length = filters.length === length ? '' : length
+    Object.assign(filters, { length: 'all', stars: '', keyword: '' })
 }
 
 async function openStars() {
@@ -144,29 +134,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                 <div
                     class="records-filter__group"
                     role="group"
-                    aria-label="记录类型"
-                >
-                    <button
-                        v-for="option in modeOptions"
-                        :key="option.value"
-                        class="records-filter__option"
-                        :class="{ 'is-active': filters.mode === option.value }"
-                        type="button"
-                        :aria-pressed="filters.mode === option.value"
-                        @click="filters.mode = option.value"
-                    >
-                        <span>{{ option.label }}</span>
-                    </button>
-                </div>
-
-                <span
-                    class="records-filter__divider"
-                    aria-hidden="true"
-                ></span>
-
-                <div
-                    class="records-filter__group records-filter__group--length"
-                    role="group"
                     aria-label="赛道长度"
                 >
                     <button
@@ -176,7 +143,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                         :class="{ 'is-active': filters.length === option.value }"
                         type="button"
                         :aria-pressed="filters.length === option.value"
-                        @click="toggleLength(option.value)"
+                        @click="filters.length = option.value"
                     >
                         <span>{{ option.label }}</span>
                     </button>
@@ -357,12 +324,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
 
                     span {
                         transform: skewX(24deg);
-                    }
-                }
-
-                &.records-filter__group--length {
-                    .records-filter__option {
-                        width: 64px;
                     }
                 }
             }
@@ -597,7 +558,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
         }
     }
 
-    @media (max-width: 1050px) {
+    @media (max-width: 880px) {
         .records-filter {
             flex-wrap: wrap;
             gap: 20px;
@@ -608,7 +569,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
         }
     }
 
-    @media (max-width: 800px) {
+    @media (max-width: 850px) {
         padding-block: 24px;
 
         .records-filter {
@@ -616,6 +577,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                 flex: 1;
                 flex-wrap: wrap;
                 gap: 16px 24px;
+
+                .records-filter__group {
+                    flex-wrap: wrap;
+                }
 
                 .records-filter__divider {
                     display: none;
