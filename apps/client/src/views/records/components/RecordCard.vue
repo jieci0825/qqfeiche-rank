@@ -1,40 +1,46 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { Icon } from '@/icons'
-import type { TrackRecord } from '@/data/records'
+import type { TrackRecord } from '@/api'
 import defaultDriverUrl from '@/assets/record-board/default-driver.svg?url'
 import defaultTeamUrl from '@/assets/record-board/default-team.svg?url'
 import defaultTrackUrl from '@/assets/record-board/default-track.svg?url'
 import daysBrushUrl from '@/assets/record-board/record-days-brush.png'
 import FallbackImage from './FallbackImage.vue'
+import {
+    formatRecordDate,
+    formatRecordTime,
+    trackDistance,
+    trackDistanceLabels,
+} from '../record-display'
 
 const holdingBrushStyle = { backgroundImage: `url("${daysBrushUrl}")` }
 
 const props = defineProps<{
     record: TrackRecord
 }>()
-const lengthLabels = { short: '短图', medium: '中图', long: '长图' }
-const formattedTime = computed(() => {
-    const hundredths = Math.floor(props.record.timeMs / 10)
-    const minutes = Math.floor(hundredths / 6000)
-    const seconds = String(Math.floor(hundredths / 100) % 60).padStart(2, '0')
-    return `${minutes}:${seconds}.${String(hundredths % 100).padStart(2, '0')}`
-})
+const route = useRoute()
+const current = computed(() => props.record.current)
 </script>
 
 <template>
-    <article
+    <RouterLink
         class="record-card"
-        :aria-label="`${record.track.name}记录`"
+        :to="{
+            name: 'track-detail',
+            params: { id: record.track.id },
+            query: route.query,
+        }"
     >
         <div class="record-card__inner">
             <div class="record-card__track">
                 <div class="record-card__image">
                     <FallbackImage
                         class="record-card__cover"
-                        :src="record.track.image || record.track.cover"
+                        :src="record.track.coverUrl"
                         :fallback="defaultTrackUrl"
-                        :alt="`${record.track.name}赛道`"
+                        alt=""
                     />
                 </div>
                 <div class="record-card__track-info">
@@ -45,13 +51,15 @@ const formattedTime = computed(() => {
                         {{ record.track.name }}
                     </h3>
                     <div class="record-card__tags">
-                        <span class="record-card__tag"
-                            >距离：{{ lengthLabels[record.length] }}</span
-                        >
-                        <span class="record-card__tag"
-                            >场景：{{ record.raceMode }}</span
-                        >
+                        <span class="record-card__tag">
+                            距离：{{
+                                trackDistanceLabels[
+                                    trackDistance(current.timeMs)
+                                ]
+                            }}
+                        </span>
                         <span
+                            v-if="record.track.stars !== null"
                             class="record-card__tag"
                             :aria-label="`星级：${record.track.stars} 星`"
                         >
@@ -74,33 +82,41 @@ const formattedTime = computed(() => {
             <div class="record-card__driver">
                 <FallbackImage
                     class="record-card__avatar"
-                    :src="record.driver.avatar"
+                    :src="current.driver.imageUrl"
                     :fallback="defaultDriverUrl"
-                    :alt="`${record.driver.name}的头像`"
+                    alt=""
                 />
                 <div class="record-card__driver-info">
                     <div class="record-card__driver-name">
-                        <span :title="record.driver.name">{{
-                            record.driver.name
+                        <span :title="current.driver.name">{{
+                            current.driver.name
                         }}</span>
                     </div>
                     <div class="record-card__team">
                         <FallbackImage
                             class="record-card__team-badge"
-                            :src="record.team.badge"
                             :fallback="defaultTeamUrl"
                             alt=""
                         />
-                        <span :title="record.team.name"
-                            >车队：{{ record.team.name }}</span
-                        >
+                        <span :title="current.team?.name">{{
+                            current.team
+                                ? `车队：${current.team.name}`
+                                : '独立车手'
+                        }}</span>
                     </div>
                 </div>
             </div>
 
             <div class="record-card__result">
-                <span class="record-card__result-label">达成</span>
-                <span class="record-card__time">{{ formattedTime }}</span>
+                <span class="record-card__time">{{
+                    formatRecordTime(current.timeMs)
+                }}</span>
+                <span class="record-card__result-label"
+                    >达成
+                    <time :datetime="current.achievedAt">{{
+                        current.achievedAt
+                    }}</time></span
+                >
             </div>
 
             <div class="record-card__status">
@@ -109,17 +125,18 @@ const formattedTime = computed(() => {
                     :style="holdingBrushStyle"
                 >
                     <span>保持</span>
-                    <strong>{{ record.holdingDays }}</strong>
+                    <strong>{{ current.holdingDays }}</strong>
                     <span>天</span>
                 </div>
                 <span class="record-card__updated">
-                    更新：<time :datetime="record.updatedAt">{{
-                        record.updatedAt
+                    {{ current.kind === 'restore' ? '恢复' : '上榜' }}
+                    <time :datetime="current.effectiveAt">{{
+                        formatRecordDate(current.effectiveAt)
                     }}</time>
                 </span>
             </div>
         </div>
-    </article>
+    </RouterLink>
 </template>
 
 <style scoped lang="scss">
@@ -138,6 +155,7 @@ const formattedTime = computed(() => {
 
     position: relative;
     isolation: isolate;
+    display: block;
     padding: 1px;
     background: linear-gradient(
         120deg,
@@ -148,6 +166,14 @@ const formattedTime = computed(() => {
     );
     clip-path: var(--record-card-shape);
     font-variant-numeric: lining-nums tabular-nums;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+        padding: 2px;
+        margin: -1px;
+        background: var(--tk-color-primary);
+    }
 
     &::before,
     &::after {
@@ -368,7 +394,12 @@ const formattedTime = computed(() => {
 
             .record-card__result-label {
                 color: var(--tk-color-text-secondary);
-                font-size: 14px;
+                font-size: 13px;
+                white-space: nowrap;
+
+                time {
+                    font-family: var(--tk-font-family-numeric);
+                }
             }
 
             .record-card__time {
@@ -463,11 +494,23 @@ const formattedTime = computed(() => {
                     --record-card-image-bottom-mask: linear-gradient(
                         to bottom,
                         var(--tk-color-text) 60%,
-                        color-mix(in srgb, var(--tk-color-text) 94%, transparent)
+                        color-mix(
+                                in srgb,
+                                var(--tk-color-text) 94%,
+                                transparent
+                            )
                             68%,
-                        color-mix(in srgb, var(--tk-color-text) 65%, transparent)
+                        color-mix(
+                                in srgb,
+                                var(--tk-color-text) 65%,
+                                transparent
+                            )
                             78%,
-                        color-mix(in srgb, var(--tk-color-text) 28%, transparent)
+                        color-mix(
+                                in srgb,
+                                var(--tk-color-text) 28%,
+                                transparent
+                            )
                             88%,
                         color-mix(in srgb, var(--tk-color-text) 6%, transparent)
                             96%,
@@ -476,10 +519,12 @@ const formattedTime = computed(() => {
 
                     flex-basis: 40%;
                     // 赛道独占一行时，让图片右侧与底部同时淡出到卡片背景。
-                    -webkit-mask-image: var(--record-card-image-mask),
+                    -webkit-mask-image:
+                        var(--record-card-image-mask),
                         var(--record-card-image-bottom-mask);
                     -webkit-mask-composite: source-in;
-                    mask-image: var(--record-card-image-mask),
+                    mask-image:
+                        var(--record-card-image-mask),
                         var(--record-card-image-bottom-mask);
                     mask-composite: intersect;
                 }

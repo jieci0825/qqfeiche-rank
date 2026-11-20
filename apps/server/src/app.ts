@@ -4,6 +4,8 @@ import { createAuthRoutes } from './modules/auth/auth.routes.ts'
 import type { AuthService } from './modules/auth/auth.service.ts'
 import { createDataRoutes } from './modules/data/data.routes.ts'
 import type { DataStore } from './modules/data/data.store.ts'
+import { createPublicRoutes } from './modules/public/public.routes.ts'
+import type { PublicStore } from './modules/public/public.store.ts'
 import { createRbacRoutes } from './modules/rbac/rbac.routes.ts'
 import type { RbacStore } from './modules/rbac/rbac.store.ts'
 import { createRecordRoutes } from './modules/records/records.routes.ts'
@@ -19,12 +21,13 @@ interface AppOptions {
     tracks: TrackStore
     data: DataStore
     records: RecordStore
+    publicRecords: PublicStore
     cosUploads?: CosUploads
     adminOrigins: ReadonlySet<string>
     trustProxy: boolean
 }
 
-export function createApp({ auth, rbac, tracks, data, records, cosUploads, adminOrigins, trustProxy }: AppOptions) {
+export function createApp({ auth, rbac, tracks, data, records, publicRecords, cosUploads, adminOrigins, trustProxy }: AppOptions) {
     const app = new Koa({ proxy: trustProxy, maxIpsCount: 1 })
     app.use(handleErrors)
     app.use(createAuthRoutes(auth, adminOrigins, rbac))
@@ -33,6 +36,7 @@ export function createApp({ auth, rbac, tracks, data, records, cosUploads, admin
     app.use(createTrackRoutes(tracks, auth, rbac, cosUploads))
     app.use(createDataRoutes(data, auth, rbac, cosUploads))
     app.use(createRecordRoutes(records, auth, rbac, cosUploads))
+    app.use(createPublicRoutes(publicRecords, cosUploads))
 
     app.use(ctx => {
         if (ctx.path === '/api/health' && (ctx.method === 'GET' || ctx.method === 'HEAD')) {

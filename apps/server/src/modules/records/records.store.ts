@@ -3,6 +3,7 @@ import { writeTransaction } from '../../db/database.ts'
 import { HttpError } from '../../http/errors.ts'
 import { createFileStore, type UploadedFile } from '../files/files.store.ts'
 import type { AuthorizedActor } from '../rbac/rbac.store.ts'
+import { latestValidVersionId, recordAchievedDate } from './record-queries.ts'
 
 export const voidReasons = ['bug', 'reset', 'cheat', 'boost', 'mistake', 'other'] as const
 type VoidReason = typeof voidReasons[number]
@@ -76,8 +77,7 @@ interface VoidInput {
 }
 
 const beijingDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', dateStyle: 'short' })
-// 日期字段兼容旧版以 UTC 时间戳录入的成绩。
-const achievedDate = "date(achieved_at, '+8 hours')"
+const achievedDate = recordAchievedDate('achieved_at')
 const runColumns = `id, track_id AS trackId, driver_id AS driverId, team_id AS teamId,
     car_id AS carId, pet_id AS petId, ecu, time_cs * 10 AS timeMs, ${achievedDate} AS achievedAt,
     screenshot_file_id AS screenshotFileId, video_url AS videoUrl, note, status,
@@ -95,12 +95,7 @@ const recordSource = `FROM (SELECT ${runColumns} FROM runs) AS run
     LEFT JOIN files AS screenshot ON screenshot.id = run.screenshotFileId
     LEFT JOIN admins AS creator ON creator.id = run.createdBy
     LEFT JOIN admins AS voider ON voider.id = run.voidedBy
-    LEFT JOIN record_versions AS current_version ON current_version.id = (
-        SELECT version.id FROM record_versions AS version
-        JOIN runs AS candidate ON candidate.id = version.run_id
-        WHERE version.track_id = run.trackId AND candidate.status = 'valid'
-        ORDER BY version.id DESC LIMIT 1
-    )`
+    LEFT JOIN record_versions AS current_version ON current_version.id = ${latestValidVersionId('run.trackId')}`
 const selectRecord = `SELECT run.*, track.name AS trackName, driver.name AS driverName,
     track_cover.object_key AS trackCoverObjectKey,
     team.name AS teamName, car.name AS carName, pet.name AS petName,
@@ -131,8 +126,7 @@ export function createRecordStore(db: DatabaseSync) {
         run.time_cs * 10 AS timeMs, ${achievedDate} AS achievedAt, version.created_at AS effectiveAt
         FROM record_versions AS version JOIN runs AS run ON run.id = version.run_id
         JOIN drivers AS driver ON driver.id = run.driver_id
-        WHERE version.track_id = ? AND run.status = 'valid' AND run.id IS NOT ?
-        ORDER BY version.id DESC LIMIT 1`)
+        WHERE version.id = ${latestValidVersionId('?', '?')}`)
     const duplicate = db.prepare(`SELECT id FROM runs WHERE track_id = ? AND driver_id = ? AND time_cs = ?
         AND ${achievedDate} = ? AND id IS NOT ?`)
     const insert = db.prepare(`INSERT INTO runs (track_id, driver_id, team_id, car_id, pet_id, ecu, time_cs, achieved_at,

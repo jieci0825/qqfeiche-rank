@@ -1,18 +1,30 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { apiErrorMessage, listAllRecords } from '@/api'
+import { usePublicQuery } from '@/composables/use-public-query'
 import { Icon } from '@/icons'
-import { mockTrackRecords } from '@/data/records'
-import type { TrackLength } from '@/data/records'
 import RecordCard from './components/RecordCard.vue'
+import { trackDistance, trackDistanceLabels } from './record-display'
 
-type LengthFilter = 'all' | TrackLength
+const sortOptions = [
+    { label: '保持时长', value: 'holding' },
+    { label: '最近上榜', value: 'recent' },
+] as const
+const distanceOptions = [
+    { label: '全部', value: '' },
+    { label: trackDistanceLabels.short, value: 'short' },
+    { label: trackDistanceLabels.medium, value: 'medium' },
+    { label: trackDistanceLabels.long, value: 'long' },
+] as const
 
-const lengthOptions: { label: string; value: LengthFilter }[] = [
-    { label: '全部', value: 'all' },
-    { label: '短图', value: 'short' },
-    { label: '中图', value: 'medium' },
-    { label: '长图', value: 'long' },
-]
+interface RecordFilters {
+    keyword: string
+    stars: string
+    sort: typeof sortOptions[number]['value']
+    distance: typeof distanceOptions[number]['value']
+}
+
 const starOptions = [
     { label: '全部', value: '' },
     ...[1, 2, 3, 4, 5, 6, 7].map(stars => ({
@@ -26,31 +38,72 @@ const starsTrigger = ref<HTMLButtonElement | null>(null)
 const starsList = ref<HTMLUListElement | null>(null)
 const starsOpen = ref(false)
 const activeStarIndex = ref(0)
+const route = useRoute()
+const router = useRouter()
 
-const filters = reactive({
-    length: 'all' as LengthFilter,
-    stars: '',
-    keyword: '',
+const filters = computed<RecordFilters>(() => {
+    const { q, stars, sort, distance } = route.query
+    return {
+        keyword: typeof q === 'string' ? q.trim().slice(0, 100) : '',
+        stars: typeof stars === 'string' && /^[1-7]$/.test(stars) ? stars : '',
+        sort: sort === 'recent' ? 'recent' : 'holding',
+        distance: distanceOptions.find(option => option.value === distance)?.value ?? '',
+    }
 })
+const keyword = ref(filters.value.keyword)
+const { data, error, loading, retry } = usePublicQuery(undefined, (_, signal) => listAllRecords(signal))
+const hasSearch = computed(() => Boolean(filters.value.keyword || filters.value.stars || filters.value.distance))
+const hasFilters = computed(() => hasSearch.value || filters.value.sort !== 'holding')
 const filteredRecords = computed(() => {
-    const keyword = filters.keyword.normalize('NFKC').trim().toLocaleLowerCase()
-
-    return mockTrackRecords.filter(record => {
-        if (filters.length !== 'all' && record.length !== filters.length) return false
-        if (filters.stars && record.track.stars !== Number(filters.stars)) return false
-
-        const searchText = [record.track.name, record.driver.name, record.team.name]
-            .join(' ').normalize('NFKC').toLocaleLowerCase()
-        return !keyword || searchText.includes(keyword)
+    const { keyword, stars, distance, sort } = filters.value
+    const search = normalizeSearch(keyword)
+    const records = (data.value?.items ?? []).filter(({ track, current }) => {
+        if (stars && track.stars !== Number(stars)) return false
+        if (distance && trackDistance(current.timeMs) !== distance) return false
+        return !search || [track.name, current.driver.name, current.team?.name]
+            .some(name => name !== undefined && normalizeSearch(name).includes(search))
     })
+
+    return records.sort(({ current: left }, { current: right }) =>
+        sort === 'holding'
+            ? right.holdingMs - left.holdingMs
+            : Date.parse(right.effectiveAt) - Date.parse(left.effectiveAt),
+    )
 })
+
+function normalizeSearch(value: string) {
+    return value.normalize('NFKC').trim().toLowerCase()
+}
+
+watch(() => filters.value.keyword, value => { keyword.value = value })
+watch(keyword, (value, _, onCleanup) => {
+    if (value.trim() === filters.value.keyword) return
+    const timeout = window.setTimeout(applySearch, 250)
+    onCleanup(() => window.clearTimeout(timeout))
+})
+
+function updateFilters(changes: Partial<RecordFilters> = {}) {
+    const { keyword: search, stars, sort, distance } = { ...filters.value, keyword: keyword.value.trim(), ...changes }
+    const query = {
+        q: search || undefined,
+        stars: stars || undefined,
+        sort: sort === 'holding' ? undefined : sort,
+        distance: distance || undefined,
+    }
+    void router.replace({ name: 'records', query })
+}
+
+function applySearch() {
+    if (keyword.value.trim() !== filters.value.keyword) updateFilters()
+}
 
 function resetFilters() {
-    Object.assign(filters, { length: 'all', stars: '', keyword: '' })
+    keyword.value = ''
+    updateFilters({ stars: '', sort: 'holding', distance: '' })
 }
 
 async function openStars() {
-    activeStarIndex.value = starOptions.findIndex(option => option.value === filters.stars)
+    activeStarIndex.value = starOptions.findIndex(option => option.value === filters.value.stars)
     starsOpen.value = true
     await nextTick()
     starsList.value?.focus()
@@ -63,7 +116,7 @@ function closeStars(restoreFocus = false) {
 }
 
 function selectStars(value: string) {
-    filters.stars = value
+    updateFilters({ stars: value })
     closeStars(true)
 }
 
@@ -134,16 +187,16 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                 <div
                     class="records-filter__group"
                     role="group"
-                    aria-label="赛道长度"
+                    aria-label="记录榜排序"
                 >
                     <button
-                        v-for="option in lengthOptions"
+                        v-for="option in sortOptions"
                         :key="option.value"
                         class="records-filter__option"
-                        :class="{ 'is-active': filters.length === option.value }"
+                        :class="{ 'is-active': filters.sort === option.value }"
                         type="button"
-                        :aria-pressed="filters.length === option.value"
-                        @click="filters.length = option.value"
+                        :aria-pressed="filters.sort === option.value"
+                        @click="updateFilters({ sort: option.value })"
                     >
                         <span>{{ option.label }}</span>
                     </button>
@@ -153,6 +206,24 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                     class="records-filter__divider"
                     aria-hidden="true"
                 ></span>
+
+                <div
+                    class="records-filter__group"
+                    role="group"
+                    aria-label="赛道距离"
+                >
+                    <button
+                        v-for="option in distanceOptions"
+                        :key="option.value"
+                        class="records-filter__option"
+                        :class="{ 'is-active': filters.distance === option.value }"
+                        type="button"
+                        :aria-pressed="filters.distance === option.value"
+                        @click="updateFilters({ distance: option.value })"
+                    >
+                        <span>{{ option.label }}</span>
+                    </button>
+                </div>
 
                 <div
                     ref="starsDropdown"
@@ -216,6 +287,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                         </li>
                     </ul>
                 </div>
+                <button v-if="hasFilters" class="records-filter__clear" type="button" @click="resetFilters">重置</button>
             </div>
 
             <label class="records-filter__search">
@@ -225,11 +297,13 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                     aria-hidden="true"
                 />
                 <input
-                    v-model="filters.keyword"
+                    v-model="keyword"
                     class="records-filter__search-input"
                     type="search"
+                    maxlength="100"
                     placeholder="搜索赛道、车手或车队"
                     aria-label="搜索赛道、车手或车队"
+                    @keydown.enter="applySearch"
                 />
             </label>
         </section>
@@ -237,24 +311,28 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
         <section class="records-list" aria-label="赛道记录榜单">
             <header class="records-list__header">
                 <h2 class="records-list__title">赛道记录</h2>
-                <p class="records-list__count" role="status">
+                <p v-if="data" class="records-list__count" role="status">
                     <span>共</span>
                     <span class="records-list__count-value">{{ filteredRecords.length }}</span>
-                    <span>条记录</span>
+                    <span>张赛道</span>
                 </p>
             </header>
-            <ul v-if="filteredRecords.length" class="records-list__items">
-                <li v-for="record in filteredRecords" :key="record.id">
-                    <RecordCard
-                        :record="record"
-                    />
+            <div v-if="loading" class="records-list__empty" role="status">正在加载赛道记录…</div>
+            <div v-else-if="error" class="records-list__empty">
+                <p role="alert">{{ apiErrorMessage(error) }}</p>
+                <button type="button" @click="retry">重新加载</button>
+            </div>
+            <ul v-else-if="filteredRecords.length" class="records-list__items">
+                <li v-for="record in filteredRecords" :key="record.track.id">
+                    <RecordCard :record="record" />
                 </li>
             </ul>
-            <div v-else class="records-list__empty">
+            <div v-else-if="hasSearch" class="records-list__empty">
                 <Icon icon="ep:search" aria-hidden="true" />
-                <p>没有找到匹配的记录</p>
+                <p>没有找到匹配的赛道</p>
                 <button type="button" @click="resetFilters">重置筛选</button>
             </div>
+            <div v-else class="records-list__empty" role="status">暂无公开赛道记录</div>
         </section>
     </div>
 </template>
@@ -278,25 +356,25 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
             display: flex;
             flex: 0 0 auto;
             align-items: center;
-            gap: 32px;
+            gap: 16px 24px;
             padding-inline: 8px;
 
             .records-filter__group {
                 display: flex;
-                gap: 8px;
+                gap: 12px;
 
                 .records-filter__option {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    width: 80px;
                     height: 30px;
-                    padding: 0;
+                    padding-inline: clamp(12px, 1.6vw, 16px);
                     border: 1px solid color-mix(in srgb, var(--tk-color-text-secondary) 55%, transparent);
                     color: var(--tk-color-text-secondary);
                     background: color-mix(in srgb, var(--tk-color-bg) 35%, transparent);
                     box-shadow: inset 0 0 0 2px var(--tk-color-bg);
                     cursor: pointer;
+                    white-space: nowrap;
                     transform: skewX(-24deg);
                     transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
 
@@ -333,6 +411,22 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                 width: 1px;
                 height: 30px;
                 background: color-mix(in srgb, var(--tk-color-text-secondary) 45%, transparent);
+            }
+
+            .records-filter__clear {
+                padding: 5px;
+                border: 0;
+                color: var(--tk-color-primary);
+                background: transparent;
+                cursor: pointer;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+
+                &:focus-visible {
+                    outline: 2px solid var(--tk-color-primary);
+                }
             }
 
             .records-filter__stars {
@@ -528,16 +622,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
             color: var(--tk-color-text-secondary);
             background: color-mix(in srgb, var(--tk-color-bg) 65%, transparent);
 
-            svg {
-                width: 30px;
-                height: 30px;
-            }
-
-            p {
-                margin-block: 16px;
-                font-size: 14px;
-            }
-
             button {
                 padding: 6px 16px;
                 border: 1px solid var(--tk-color-primary);
@@ -555,10 +639,20 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                     outline-offset: 3px;
                 }
             }
+
+            svg {
+                width: 30px;
+                height: 30px;
+            }
+
+            p {
+                margin-block: 16px;
+                font-size: 14px;
+            }
         }
     }
 
-    @media (max-width: 880px) {
+    @media (max-width: 1140px) {
         .records-filter {
             flex-wrap: wrap;
             gap: 20px;
@@ -566,17 +660,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
             .records-filter__search {
                 flex: 1 1 100%;
             }
-        }
-    }
 
-    @media (max-width: 850px) {
-        padding-block: 24px;
-
-        .records-filter {
             .records-filter__conditions {
                 flex: 1;
                 flex-wrap: wrap;
-                gap: 16px 24px;
 
                 .records-filter__group {
                     flex-wrap: wrap;
@@ -587,6 +674,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', handleOutsideP
                 }
             }
         }
+    }
+
+    @media (max-width: 850px) {
+        padding-block: 24px;
     }
 }
 </style>

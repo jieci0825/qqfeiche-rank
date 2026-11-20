@@ -186,7 +186,7 @@ onBeforeUnmount(() => {
                             </template>
                         </el-table-column>
                         <!-- @vue-generic {RecordItem} -->
-                        <el-table-column label="操作" width="168">
+                        <el-table-column label="操作" width="184">
                             <template #default="{ row }">
                                 <div class="management-table__row-actions">
                                     <el-button link type="primary" @click="loadDetails(row)">详情</el-button>

@@ -1,22 +1,27 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { mockRankings, rankingCategories } from '@/data/rankings'
-import type { RankingCategory, RankingItem } from '@/data/rankings'
+import { apiErrorMessage, listRankings, type RankingCategory, type RankingItem } from '@/api'
+import { usePublicQuery } from '@/composables/use-public-query'
 import PodiumCard from './components/PodiumCard.vue'
 import RankCard from './components/RankCard.vue'
 import RankArtwork from './components/RankArtwork.vue'
 
+const rankingCategories = [
+    { value: 'driver', label: '车手', unit: '位' },
+    { value: 'car', label: '赛车', unit: '辆' },
+    { value: 'pet', label: '宠物', unit: '只' },
+] as const
+
 const selectedCategory = ref<RankingCategory>('driver')
+const { data, error, loading, retry } = usePublicQuery(selectedCategory, listRankings)
 const currentCategory = computed(() => rankingCategories.find(category => category.value === selectedCategory.value) ?? rankingCategories[0])
-const rankedItems = computed(() => [...mockRankings[selectedCategory.value]]
-    .sort((left, right) => right.nationalRecordCount - left.nationalRecordCount)
-    .map((item, index) => ({ item, rank: index + 1 })))
+const rankedItems = computed(() => data.value?.items ?? [])
 const podiumItems = computed(() => rankedItems.value.flatMap<{
     item: RankingItem
     rank: 1 | 2 | 3
-}>(entry => {
-    const { rank } = entry
-    return rank === 1 || rank === 2 || rank === 3 ? [{ ...entry, rank }] : []
+}>(item => {
+    const { rank } = item
+    return rank === 1 || rank === 2 || rank === 3 ? [{ item, rank }] : []
 }))
 const otherItems = computed(() => rankedItems.value.slice(3))
 </script>
@@ -41,13 +46,18 @@ const otherItems = computed(() => rankedItems.value.slice(3))
                     <span>{{ category.label }}</span>
                 </button>
             </div>
-            <p class="rankings-page__count" aria-live="polite" aria-atomic="true">
-                共 <span>{{ rankedItems.length }}</span> {{ currentCategory.unit }}{{ currentCategory.label }}
+            <p v-if="data" class="rankings-page__count" aria-live="polite" aria-atomic="true">
+                共 <span>{{ data.total }}</span> {{ currentCategory.unit }}{{ currentCategory.label }}
                 <RankArtwork class="rankings-page__count-underline" name="count-underline" eager />
             </p>
         </header>
 
-        <div v-if="rankedItems.length" class="rankings-page__leaderboard">
+        <p v-if="loading" class="rankings-page__empty" role="status">正在加载{{ currentCategory.label }}排行…</p>
+        <div v-else-if="error" class="rankings-page__empty">
+            <p role="alert">{{ apiErrorMessage(error) }}</p>
+            <button type="button" @click="retry">重新加载</button>
+        </div>
+        <div v-else-if="rankedItems.length" class="rankings-page__leaderboard">
             <div class="rankings-page__podium" role="group" :aria-label="`前三名${currentCategory.label}`">
                 <PodiumCard
                     v-for="entry in podiumItems"
@@ -60,10 +70,10 @@ const otherItems = computed(() => rankedItems.value.slice(3))
             <template v-if="otherItems.length">
                 <RankArtwork class="rankings-page__divider" name="section-divider" eager />
                 <ol class="rankings-page__list" start="4" :aria-label="`其余${currentCategory.label}排名`">
-                    <li v-for="entry in otherItems" :key="entry.item.id">
+                    <li v-for="item in otherItems" :key="item.id">
                         <RankCard
-                            :item="entry.item"
-                            :rank="entry.rank"
+                            :item="item"
+                            :rank="item.rank"
                         />
                     </li>
                 </ol>
@@ -213,6 +223,24 @@ const otherItems = computed(() => rankedItems.value.slice(3))
         color: var(--tk-color-text-secondary);
         font-size: 22px;
         text-align: center;
+
+        button {
+            padding: 6px 16px;
+            border: 1px solid var(--tk-color-primary);
+            color: var(--tk-color-primary);
+            background: transparent;
+            font-size: 16px;
+            cursor: pointer;
+
+            &:hover {
+                background: color-mix(in srgb, var(--tk-color-primary) 10%, transparent);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--tk-color-primary);
+                outline-offset: 3px;
+            }
+        }
     }
 
     @media (max-width: 900px) {

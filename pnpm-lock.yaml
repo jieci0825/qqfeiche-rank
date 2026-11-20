@@ -123,6 +123,9 @@ importers:
       '@iconify/vue':
         specifier: 'catalog:'
         version: 5.0.5(vue@3.5.45(typescript@6.0.3))
+      alova:
+        specifier: ^3.5.5
+        version: 3.5.5
       element-plus:
         specifier: 'catalog:'
         version: 2.14.8(vue@3.5.45(typescript@6.0.3))

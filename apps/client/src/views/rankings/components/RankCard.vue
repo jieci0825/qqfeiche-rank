@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RankingItem } from '@/data/rankings'
+import type { RankingItem } from '@/api'
 import RankIdentity from './RankIdentity.vue'
 import RankArtwork from './RankArtwork.vue'
 

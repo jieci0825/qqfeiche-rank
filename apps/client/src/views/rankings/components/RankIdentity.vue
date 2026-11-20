@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RankingItem } from '@/data/rankings'
+import type { RankingItem } from '@/api'
 import defaultDriverUrl from '@/assets/record-board/default-driver.svg?url'
 import defaultCarUrl from '@/assets/rankings/default-car.png'
 import defaultPetUrl from '@/assets/rankings/default-pet.png'
@@ -19,7 +19,7 @@ const defaultImages = {
     <div class="rank-identity" :class="{ 'rank-identity--without-team': item.category !== 'driver' }">
         <FallbackImage
             class="rank-identity__avatar"
-            :src="item.image"
+            :src="item.imageUrl"
             :fallback="defaultImages[item.category]"
             alt=""
         />
@@ -28,11 +28,10 @@ const defaultImages = {
             <div v-if="item.category === 'driver'" class="rank-identity__team">
                 <FallbackImage
                     class="rank-identity__team-badge"
-                    :src="item.team.badge"
                     :fallback="defaultTeamUrl"
                     alt=""
                 />
-                <span :title="item.team.name">车队：{{ item.team.name }}</span>
+                <span :title="item.team?.name">{{ item.team ? `车队：${item.team.name}` : '独立车手' }}</span>
             </div>
         </div>
     </div>

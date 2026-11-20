@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { ref, watch } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import ClientHeader from './components/ClientHeader.vue'
+
+const route = useRoute()
+const main = ref<HTMLElement | null>(null)
+
+watch(() => route.path, () => main.value?.scrollTo({ top: 0 }), { flush: 'post' })
 </script>
 
 <template>
     <div class="client-app">
         <ClientHeader />
 
-        <main class="client-main">
+        <main ref="main" class="client-main">
             <div class="client-main__inner">
                 <RouterView />
             </div>

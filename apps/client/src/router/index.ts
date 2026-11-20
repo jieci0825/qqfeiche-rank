@@ -18,6 +18,11 @@ const router = createRouter({
                     component: () => import('@/views/records/index.vue'),
                 },
                 {
+                    path: 'tracks/:id',
+                    name: 'track-detail',
+                    component: () => import('@/views/records/TrackRecordDetail.vue'),
+                },
+                {
                     path: 'rankings',
                     name: 'rankings',
                     component: () => import('@/views/rankings/index.vue'),
