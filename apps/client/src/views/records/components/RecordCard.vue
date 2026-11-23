@@ -1,19 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { Icon } from '@/icons'
 import type { TrackRecord } from '@/api'
 import defaultDriverUrl from '@/assets/record-board/default-driver.svg?url'
 import defaultTeamUrl from '@/assets/record-board/default-team.svg?url'
 import defaultTrackUrl from '@/assets/record-board/default-track.svg?url'
 import daysBrushUrl from '@/assets/record-board/record-days-brush.png'
 import FallbackImage from './FallbackImage.vue'
-import {
-    formatRecordDate,
-    formatRecordTime,
-    trackDistance,
-    trackDistanceLabels,
-} from '../record-display'
+import TrackRecordTags from './TrackRecordTags.vue'
+import { formatRecordDate, formatRecordTime } from '../record-display'
 
 const holdingBrushStyle = { backgroundImage: `url("${daysBrushUrl}")` }
 
@@ -50,32 +45,10 @@ const current = computed(() => props.record.current)
                     >
                         {{ record.track.name }}
                     </h3>
-                    <div class="record-card__tags">
-                        <span class="record-card__tag">
-                            距离：{{
-                                trackDistanceLabels[
-                                    trackDistance(current.timeMs)
-                                ]
-                            }}
-                        </span>
-                        <span
-                            v-if="record.track.stars !== null"
-                            class="record-card__tag"
-                            :aria-label="`星级：${record.track.stars} 星`"
-                        >
-                            星级：
-                            <span
-                                class="record-card__stars"
-                                aria-hidden="true"
-                            >
-                                <Icon
-                                    v-for="star in record.track.stars"
-                                    :key="star"
-                                    icon="ep:star-filled"
-                                />
-                            </span>
-                        </span>
-                    </div>
+                    <TrackRecordTags
+                        :time-ms="current.timeMs"
+                        :stars="record.track.stars"
+                    />
                 </div>
             </div>
 
@@ -285,40 +258,6 @@ const current = computed(() => props.record.current)
                     line-height: 1.25;
                     text-overflow: ellipsis;
                     white-space: nowrap;
-                }
-
-                .record-card__tags {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 5px;
-
-                    .record-card__tag {
-                        display: inline-flex;
-                        align-items: center;
-                        min-height: 20px;
-                        padding: 1px 5px;
-                        border: 1px solid
-                            color-mix(
-                                in srgb,
-                                var(--tk-color-text-secondary) 48%,
-                                transparent
-                            );
-                        border-radius: 3px;
-                        color: var(--tk-color-text-secondary);
-                        font-size: 12px;
-                        line-height: 1.4;
-                        white-space: nowrap;
-
-                        .record-card__stars {
-                            display: inline-flex;
-                            color: var(--tk-color-primary);
-
-                            svg {
-                                width: 11px;
-                                height: 11px;
-                            }
-                        }
-                    }
                 }
             }
         }

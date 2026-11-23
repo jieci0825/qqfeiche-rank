@@ -6,6 +6,7 @@ import defaultTrackUrl from '@/assets/record-board/default-track.svg?url'
 import { usePublicQuery } from '@/composables/use-public-query'
 import { Icon } from '@/icons'
 import FallbackImage from './components/FallbackImage.vue'
+import TrackRecordTags from './components/TrackRecordTags.vue'
 import { formatHoldingTime, formatRecordDateTime, formatRecordTime } from './record-display'
 
 const route = useRoute()
@@ -38,10 +39,12 @@ const notFound = computed(() => error.value instanceof ApiError && error.value.s
                 <FallbackImage class="track-detail__cover" :src="data.track.coverUrl" :fallback="defaultTrackUrl" alt="" />
                 <div class="track-detail__heading">
                     <h1>{{ data.track.name }}</h1>
-                    <div v-if="data.track.stars || data.track.status === 'archived'" class="track-detail__tags">
-                        <span v-if="data.track.stars">{{ data.track.stars }} 星</span>
-                        <span v-if="data.track.status === 'archived'">已归档</span>
-                    </div>
+                    <TrackRecordTags
+                        class="track-detail__tags"
+                        :time-ms="data.current?.timeMs ?? null"
+                        :stars="data.track.stars"
+                        :archived="data.track.status === 'archived'"
+                    />
                 </div>
             </header>
 
@@ -179,10 +182,7 @@ const notFound = computed(() => error.value instanceof ApiError && error.value.s
             }
 
             .track-detail__tags {
-                display: flex;
-                gap: 12px;
                 margin-top: 8px;
-                color: var(--tk-color-text-secondary);
             }
         }
     }
