@@ -2,7 +2,10 @@
 import { ElDrawer, ElMessage, ElPagination } from 'element-plus'
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
-import { apiErrorMessage, getRecord, listRecords, type RecordDetail, type RecordItem, type RecordState } from '@/api'
+import {
+    apiErrorMessage, getRecord, listRecordTracks, listTrackRuns,
+    type RecordDetail, type RecordItem, type RecordTrack, type RecordTrackFilter,
+} from '@/api'
 import { Icon } from '@/icons'
 import { useAuthStore } from '@/stores/auth'
 import ManagementTable from '../access/ManagementTable.vue'
@@ -10,13 +13,12 @@ import RecordDetails from './RecordDetails.vue'
 import RecordEditor from './RecordEditor.vue'
 import RecordImagePreview from './RecordImagePreview.vue'
 import RecordVoidDialog from './RecordVoidDialog.vue'
-import { formatRecordTime, recordStateLabels } from './record-display'
+import { formatRecordTime, recordStatusLabels } from './record-display'
 
 const auth = useAuthStore()
 const search = ref('')
-const status = ref<RecordState | 'all'>('all')
-const statusTypes = { current: 'success', historical: 'info', voided: 'danger' } as const
-const records = shallowRef<RecordItem[]>([])
+const status = ref<RecordTrackFilter>('all')
+const tracks = shallowRef<RecordTrack[]>([])
 const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
@@ -24,6 +26,13 @@ const loading = ref(true)
 const loadError = ref('')
 let listRequest: AbortController | undefined
 let searchTimer: ReturnType<typeof setTimeout> | undefined
+
+const historyOpen = ref(false)
+const historyTrack = shallowRef<RecordTrack>()
+const history = shallowRef<RecordItem[]>([])
+const historyError = ref('')
+const loadingHistory = ref(false)
+let historyRequest: AbortController | undefined
 
 const detailsOpen = ref(false)
 const detailRow = shallowRef<RecordItem>()
@@ -33,6 +42,7 @@ const loadingDetail = ref(false)
 let detailRequest: AbortController | undefined
 
 const createOpen = ref(false)
+const createSource = shallowRef<RecordTrack>()
 const creating = ref(false)
 const editOpen = ref(false)
 const editing = shallowRef<RecordItem>()
@@ -42,7 +52,7 @@ const previewOpen = ref(false)
 const previewUrl = ref('')
 const previewTitle = ref('')
 
-async function loadRecords(requestedPage = page.value) {
+async function loadTracks(requestedPage = page.value) {
     clearTimeout(searchTimer)
     listRequest?.abort()
     const request = new AbortController()
@@ -50,21 +60,40 @@ async function loadRecords(requestedPage = page.value) {
     loading.value = true
     loadError.value = ''
     try {
-        const result = await listRecords({ q: search.value.trim(), state: status.value, page: requestedPage }, request.signal)
+        const result = await listRecordTracks({ q: search.value.trim(), state: status.value, page: requestedPage }, request.signal)
         if (!request.signal.aborted) {
-            records.value = result.items
+            tracks.value = result.items
             page.value = result.page
             pageSize.value = result.pageSize
             total.value = result.total
         }
     } catch (error) {
         if (!request.signal.aborted) {
-            records.value = []
+            tracks.value = []
             total.value = 0
             loadError.value = apiErrorMessage(error)
         }
     } finally {
         if (listRequest === request) loading.value = false
+    }
+}
+
+async function loadHistory(track: RecordTrack) {
+    historyRequest?.abort()
+    const request = new AbortController()
+    historyRequest = request
+    historyTrack.value = track
+    history.value = []
+    historyError.value = ''
+    loadingHistory.value = true
+    historyOpen.value = true
+    try {
+        const result = await listTrackRuns(track.id, request.signal)
+        if (!request.signal.aborted) history.value = result.items
+    } catch (error) {
+        if (!request.signal.aborted) historyError.value = apiErrorMessage(error)
+    } finally {
+        if (historyRequest === request) loadingHistory.value = false
     }
 }
 
@@ -87,6 +116,11 @@ async function loadDetails(row: RecordItem) {
     }
 }
 
+function openCreate(track?: RecordTrack) {
+    createSource.value = track
+    createOpen.value = true
+}
+
 function openEditor(row: RecordItem) {
     editing.value = row
     editOpen.value = true
@@ -101,18 +135,23 @@ function showPreview(url: string, title = '赛道封面') {
 function afterCreate() {
     createOpen.value = false
     ElMessage.success('成绩已录入')
-    void loadRecords()
+    void loadTracks(1)
+}
+
+function refreshAfterChange() {
+    void loadTracks()
+    if (historyOpen.value && historyTrack.value) void loadHistory(historyTrack.value)
 }
 
 function afterEdit() {
     editOpen.value = false
     ElMessage.success('成绩资料已保存')
-    void loadRecords()
+    refreshAfterChange()
 }
 
 function afterVoid() {
     ElMessage.success('成绩已作废')
-    void loadRecords()
+    refreshAfterChange()
 }
 
 watch(search, () => {
@@ -120,15 +159,17 @@ watch(search, () => {
     listRequest?.abort()
     listRequest = undefined
     loading.value = true
-    searchTimer = setTimeout(() => { void loadRecords(1) }, 250)
+    searchTimer = setTimeout(() => { void loadTracks(1) }, 250)
 })
-watch(status, () => { void loadRecords(1) })
+watch(status, () => { void loadTracks(1) })
+watch(historyOpen, open => { if (!open) historyRequest?.abort() })
 watch(detailsOpen, open => { if (!open) detailRequest?.abort() })
 onBeforeRouteLeave(() => !creating.value)
-onMounted(() => { void loadRecords() })
+onMounted(() => { void loadTracks() })
 onBeforeUnmount(() => {
     clearTimeout(searchTimer)
     listRequest?.abort()
+    historyRequest?.abort()
     detailRequest?.abort()
 })
 </script>
@@ -141,73 +182,121 @@ onBeforeUnmount(() => {
                     maxlength="100" clearable>
                     <template #prefix><Icon icon="ep:search" aria-hidden="true" /></template>
                 </el-input>
-                <el-select v-model="status" aria-label="筛选成绩状态">
+                <el-select v-model="status" aria-label="筛选赛道记录状态">
                     <el-option label="全部状态" value="all" />
-                    <el-option v-for="(label, value) in recordStateLabels" :key="value" :label="label" :value="value" />
+                    <el-option label="有当前纪录" value="current" />
+                    <el-option label="暂无当前纪录" value="empty" />
                 </el-select>
             </template>
             <template v-if="auth.can('records:create')" #actions>
-                <el-button type="primary" @click="createOpen = true">
+                <el-button type="primary" @click="openCreate()">
                     <template #icon><Icon icon="ep:plus" aria-hidden="true" /></template>
-                    新增记录
+                    首次录入
                 </el-button>
             </template>
             <template #error>
                 <p role="alert">{{ loadError }}</p>
-                <el-button link type="primary" @click="loadRecords()">重试</el-button>
+                <el-button link type="primary" @click="loadTracks()">重试</el-button>
             </template>
 
             <div class="admin-records__results" :aria-busy="loading">
                 <div class="admin-records__table">
-                    <el-table v-loading="loading" :data="records" row-key="id" height="100%" :scrollbar-tabindex="0"
-                        :empty-text="loadError ? '列表加载失败' : search.trim() || status !== 'all' ? '没有匹配的记录' : '暂无记录'">
-                        <!-- @vue-generic {RecordItem} -->
+                    <el-table v-loading="loading" :data="tracks" row-key="id" height="100%" :scrollbar-tabindex="0"
+                        :empty-text="loadError ? '列表加载失败' : search.trim() || status !== 'all' ? '没有匹配的赛道' : '暂无已录入的赛道'">
+                        <!-- @vue-generic {RecordTrack} -->
                         <el-table-column label="赛道预览图" width="144">
                             <template #default="{ row }">
-                                <RecordImagePreview :src="row.trackCoverUrl" :track-name="row.trackName" label="赛道封面" @preview="showPreview" />
+                                <RecordImagePreview :src="row.coverUrl" :track-name="row.name" label="赛道封面" @preview="showPreview" />
                             </template>
                         </el-table-column>
-                        <el-table-column label="赛道" prop="trackName" min-width="110" show-overflow-tooltip />
-                        <!-- @vue-generic {RecordItem} -->
-                        <el-table-column label="成绩" width="100">
-                            <template #default="{ row }"><strong>{{ formatRecordTime(row.timeMs) }}</strong></template>
-                        </el-table-column>
-                        <el-table-column label="车手" prop="driverName" min-width="96" show-overflow-tooltip />
-                        <!-- @vue-generic {RecordItem} -->
-                        <el-table-column label="车队" min-width="96" show-overflow-tooltip>
-                            <template #default="{ row }">{{ row.teamName || '—' }}</template>
-                        </el-table-column>
-                        <!-- @vue-generic {RecordItem} -->
-                        <el-table-column label="达成日期" prop="achievedAt" min-width="120" />
-                        <!-- @vue-generic {RecordItem} -->
-                        <el-table-column label="状态" width="88">
+                        <!-- @vue-generic {RecordTrack} -->
+                        <el-table-column label="赛道" min-width="124">
                             <template #default="{ row }">
-                                <el-tag :type="statusTypes[row.state]">{{ recordStateLabels[row.state] }}</el-tag>
+                                {{ row.name }}
+                                <el-tag v-if="row.status !== 'active'" type="info" size="small">{{ row.status === 'archived' ? '已归档' : '已停用' }}</el-tag>
                             </template>
                         </el-table-column>
-                        <!-- @vue-generic {RecordItem} -->
-                        <el-table-column label="操作" width="184">
+                        <!-- @vue-generic {RecordTrack} -->
+                        <el-table-column label="当前纪录" width="124">
+                            <template #default="{ row }">
+                                <strong v-if="row.current">{{ formatRecordTime(row.current.timeMs) }}</strong>
+                                <span v-else>暂无当前纪录</span>
+                            </template>
+                        </el-table-column>
+                        <!-- @vue-generic {RecordTrack} -->
+                        <el-table-column label="车手" min-width="96" show-overflow-tooltip>
+                            <template #default="{ row }">{{ row.current?.driverName ?? '—' }}</template>
+                        </el-table-column>
+                        <!-- @vue-generic {RecordTrack} -->
+                        <el-table-column label="车队" min-width="96" show-overflow-tooltip>
+                            <template #default="{ row }">{{ row.current?.teamName || '—' }}</template>
+                        </el-table-column>
+                        <!-- @vue-generic {RecordTrack} -->
+                        <el-table-column label="达成日期" width="124">
+                            <template #default="{ row }">{{ row.current?.achievedAt ?? '—' }}</template>
+                        </el-table-column>
+                        <!-- @vue-generic {RecordTrack} -->
+                        <el-table-column label="保持天数" width="94">
+                            <template #default="{ row }">{{ row.current ? `${row.current.holdingDays} 天` : '—' }}</template>
+                        </el-table-column>
+                        <!-- @vue-generic {RecordTrack} -->
+                        <el-table-column label="操作" :width="auth.can('records:create') ? 168 : 96">
                             <template #default="{ row }">
                                 <div class="management-table__row-actions">
-                                    <el-button link type="primary" @click="loadDetails(row)">详情</el-button>
-                                    <el-button v-if="auth.can('records:update')" link type="primary" @click="openEditor(row)">编辑资料</el-button>
-                                    <el-button v-if="row.state !== 'voided' && auth.can('records:void')" link type="danger"
-                                        @click="voiding = row">作废</el-button>
+                                    <el-button v-if="auth.can('records:create')" link type="primary" :disabled="row.status !== 'active'"
+                                        @click="openCreate(row)">录入新纪录</el-button>
+                                    <el-button link type="primary" @click="loadHistory(row)">查看记录</el-button>
                                 </div>
                             </template>
                         </el-table-column>
                     </el-table>
                 </div>
-                <ElPagination v-if="total > pageSize" class="admin-records__pagination" aria-label="成绩分页"
+                <ElPagination v-if="total > pageSize" class="admin-records__pagination" aria-label="赛道分页"
                     layout="total, prev, pager, next" :pager-count="5" :current-page="page" :page-size="pageSize"
-                    :total="total" :disabled="loading" @update:current-page="loadRecords" />
+                    :total="total" :disabled="loading" @update:current-page="loadTracks" />
             </div>
         </ManagementTable>
 
-        <ElDrawer v-model="createOpen" title="新增记录" direction="rtl" size="min(640px, 100vw)" destroy-on-close
+        <ElDrawer v-model="createOpen" :title="createSource ? '录入新纪录' : '首次录入'" direction="rtl"
+            size="min(640px, 100vw)" destroy-on-close
             :close-on-click-modal="!creating" :close-on-press-escape="!creating" :show-close="!creating">
-            <RecordEditor v-model:saving="creating" @saved="afterCreate" @cancel="createOpen = false" @preview-track-cover="showPreview" />
+            <RecordEditor :key="createSource?.id" v-model:saving="creating" :track="createSource"
+                @saved="afterCreate" @cancel="createOpen = false" @preview-track-cover="showPreview" @tracks-changed="loadTracks(1)" />
         </ElDrawer>
+        <el-dialog v-model="historyOpen" :title="`${historyTrack?.name ?? ''} · 赛道记录`" width="min(820px, calc(100% - 32px))">
+            <p v-if="loadingHistory" role="status">正在加载赛道记录…</p>
+            <template v-else-if="historyError">
+                <p role="alert">{{ historyError }}</p>
+                <el-button v-if="historyTrack" link type="primary" @click="loadHistory(historyTrack)">重试</el-button>
+            </template>
+            <el-table v-else :data="history" row-key="id" max-height="55vh" :scrollbar-tabindex="0" empty-text="暂无成绩">
+                <!-- @vue-generic {RecordItem} -->
+                <el-table-column label="成绩" width="100">
+                    <template #default="{ row }"><strong>{{ formatRecordTime(row.timeMs) }}</strong></template>
+                </el-table-column>
+                <el-table-column label="车手" prop="driverName" min-width="96" show-overflow-tooltip />
+                <el-table-column label="车队" prop="teamName" min-width="96" show-overflow-tooltip />
+                <el-table-column label="达成日期" prop="achievedAt" width="120" />
+                <!-- @vue-generic {RecordItem} -->
+                <el-table-column label="状态" width="104">
+                    <template #default="{ row }">
+                        <el-tag :type="row.status === 'voided' ? 'danger' : row.isCurrent ? 'success' : 'info'">
+                            {{ recordStatusLabels[row.status] }}{{ row.isCurrent ? ' · 当前' : '' }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <!-- @vue-generic {RecordItem} -->
+                <el-table-column label="操作" width="184">
+                    <template #default="{ row }">
+                        <el-button link type="primary" @click="loadDetails(row)">详情</el-button>
+                        <template v-if="row.status === 'valid'">
+                            <el-button v-if="auth.can('records:update')" link type="primary" @click="openEditor(row)">编辑资料</el-button>
+                            <el-button v-if="auth.can('records:void')" link type="danger" @click="voiding = row">作废</el-button>
+                        </template>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-dialog>
         <el-dialog v-model="detailsOpen" :title="`成绩详情 · ${detailRow?.trackName ?? ''}`" width="min(640px, calc(100% - 32px))">
             <p v-if="loadingDetail" role="status">正在加载成绩详情…</p>
             <template v-else-if="detailError">

@@ -7,7 +7,8 @@ import { latestValidVersionId, recordAchievedDate } from './record-queries.ts'
 
 export const voidReasons = ['bug', 'reset', 'cheat', 'boost', 'mistake', 'other'] as const
 type VoidReason = typeof voidReasons[number]
-export type RecordState = 'current' | 'historical' | 'voided'
+export type RecordTrackFilter = 'all' | 'current' | 'empty'
+export type RecordEntryMode = 'first' | 'next'
 
 export interface RecordMetadata {
     driverId: number
@@ -47,7 +48,7 @@ interface RecordRow extends StoredRun {
     carName: string | null
     petName: string | null
     screenshotObjectKey: string | null
-    state: RecordState
+    isCurrent: 0 | 1
     effectiveAt: string | null
     createdByName: string | null
     voidedByName: string | null
@@ -61,6 +62,21 @@ interface CurrentRecord {
     achievedAt: string
     effectiveAt: string
 }
+
+interface RecordTrackRow {
+    trackId: number
+    trackName: string
+    status: 'active' | 'disabled' | 'archived'
+    coverObjectKey: string | null
+}
+
+export type ListedRecordTrack = RecordTrackRow & ({ runId: null } | {
+    runId: number
+    timeMs: number
+    driverName: string
+    teamName: string | null
+    achievedAt: string
+})
 
 interface RecordVersion {
     id: number
@@ -83,8 +99,6 @@ const runColumns = `id, track_id AS trackId, driver_id AS driverId, team_id AS t
     screenshot_file_id AS screenshotFileId, video_url AS videoUrl, note, status,
     created_at AS createdAt, created_by AS createdBy, void_reason AS voidReason,
     void_note AS voidNote, voided_at AS voidedAt, voided_by AS voidedBy`
-const stateExpression = `CASE WHEN run.status = 'voided' THEN 'voided'
-    WHEN current_version.run_id = run.id THEN 'current' ELSE 'historical' END`
 const recordSource = `FROM (SELECT ${runColumns} FROM runs) AS run
     JOIN tracks AS track ON track.id = run.trackId
     LEFT JOIN files AS track_cover ON track_cover.id = track.cover_file_id
@@ -99,24 +113,44 @@ const recordSource = `FROM (SELECT ${runColumns} FROM runs) AS run
 const selectRecord = `SELECT run.*, track.name AS trackName, driver.name AS driverName,
     track_cover.object_key AS trackCoverObjectKey,
     team.name AS teamName, car.name AS carName, pet.name AS petName,
-    screenshot.object_key AS screenshotObjectKey, ${stateExpression} AS state,
+    screenshot.object_key AS screenshotObjectKey, current_version.run_id IS run.id AS isCurrent,
     CASE WHEN current_version.run_id = run.id THEN current_version.created_at END AS effectiveAt,
     creator.display_name AS createdByName, voider.display_name AS voidedByName
     ${recordSource}`
-const listFilter = `WHERE (? = '' OR instr(lower(track.name), ?) > 0 OR instr(lower(driver.name), ?) > 0
-    OR instr(lower(team.name), ?) > 0) AND (? = 'all' OR (${stateExpression}) = ?)`
+const trackSource = `FROM (SELECT track_id, max(id) AS lastRunId FROM runs GROUP BY track_id) AS recorded
+    JOIN tracks AS track ON track.id = recorded.track_id
+    LEFT JOIN record_versions AS current_version ON current_version.id = ${latestValidVersionId('track.id')}`
+const trackFilter = `WHERE ($state = 'all' OR (current_version.id IS NOT NULL) = ($state = 'current'))
+    AND ($keyword = '' OR instr(lower(track.name), $keyword) > 0 OR EXISTS (
+        SELECT 1 FROM runs AS history
+        JOIN drivers AS driver ON driver.id = history.driver_id
+        LEFT JOIN teams AS team ON team.id = history.team_id
+        WHERE history.track_id = track.id AND history.status = 'valid'
+            AND (instr(lower(driver.name), $keyword) > 0 OR instr(lower(team.name), $keyword) > 0)
+    ))`
 
 export type RecordStore = ReturnType<typeof createRecordStore>
-export type ListedRecord = Omit<RecordRow, 'ecu'> & { ecu: string[] }
+export type ListedRecord = Omit<RecordRow, 'ecu' | 'isCurrent'> & { ecu: string[]; isCurrent: boolean }
 
 function presentRow(row: RecordRow): ListedRecord {
-    return { ...row, ecu: JSON.parse(row.ecu) as string[] }
+    return { ...row, ecu: JSON.parse(row.ecu) as string[], isCurrent: Boolean(row.isCurrent) }
 }
 
 export function createRecordStore(db: DatabaseSync) {
     const files = createFileStore(db)
-    const listRows = db.prepare(`${selectRecord} ${listFilter} ORDER BY run.id DESC LIMIT ? OFFSET ?`)
-    const countRows = db.prepare(`SELECT count(*) AS total ${recordSource} ${listFilter}`)
+    const listTracks = db.prepare(`SELECT track.id AS trackId, track.name AS trackName, track.status,
+        cover.object_key AS coverObjectKey, run.id AS runId, run.time_cs * 10 AS timeMs,
+        driver.name AS driverName, team.name AS teamName, ${recordAchievedDate('run.achieved_at')} AS achievedAt
+        ${trackSource}
+        LEFT JOIN files AS cover ON cover.id = track.cover_file_id
+        LEFT JOIN runs AS run ON run.id = current_version.run_id
+        LEFT JOIN drivers AS driver ON driver.id = run.driver_id
+        LEFT JOIN teams AS team ON team.id = run.team_id
+        ${trackFilter} ORDER BY recorded.lastRunId DESC LIMIT $limit OFFSET $offset`)
+    const countTracks = db.prepare(`SELECT count(*) AS total ${trackSource} ${trackFilter}`)
+    const listTrackRuns = db.prepare(`${selectRecord} WHERE run.trackId = ?
+        ORDER BY isCurrent DESC, run.id DESC`)
+    const trackHasRuns = db.prepare('SELECT 1 FROM runs WHERE track_id = ? LIMIT 1')
     const runById = db.prepare(`SELECT ${runColumns} FROM runs WHERE id = ?`)
     const recordById = db.prepare(`${selectRecord} WHERE run.id = ?`)
     const listVersions = db.prepare(`SELECT version.id, version.kind, version.created_at AS effectiveAt,
@@ -143,7 +177,8 @@ export function createRecordStore(db: DatabaseSync) {
 
     const trackOptions = db.prepare(`SELECT track.id, track.name, cover.object_key AS coverObjectKey
         FROM tracks AS track LEFT JOIN files AS cover ON cover.id = track.cover_file_id
-        WHERE track.status = 'active' ORDER BY track.name`)
+        WHERE track.status = 'active' AND NOT EXISTS (SELECT 1 FROM runs WHERE track_id = track.id)
+        ORDER BY track.name`)
     const driverOptions = db.prepare(`SELECT driver.id, driver.name, team.id AS teamId FROM drivers AS driver
         LEFT JOIN teams AS team ON team.id = driver.team_id AND team.status = 'active'
         WHERE driver.status = 'active' ORDER BY driver.name`)
@@ -205,12 +240,17 @@ export function createRecordStore(db: DatabaseSync) {
     }
 
     return {
-        list(keyword: string, state: RecordState | 'all', page: number, pageSize: number) {
-            const params = [keyword, keyword, keyword, keyword, state, state] as const
-            const total = Number(countRows.get(...params)?.total)
+        list(keyword: string, state: RecordTrackFilter, page: number, pageSize: number) {
+            const params = { keyword, state }
+            const total = Number(countTracks.get(params)?.total)
             const currentPage = Math.min(page, Math.max(1, Math.ceil(total / pageSize)))
-            const rows = listRows.all(...params, pageSize, (currentPage - 1) * pageSize) as unknown as RecordRow[]
-            return { items: rows.map(presentRow), total, page: currentPage, pageSize }
+            const items = listTracks.all({ ...params, limit: pageSize, offset: (currentPage - 1) * pageSize }) as unknown as ListedRecordTrack[]
+            return { items, total, page: currentPage, pageSize }
+        },
+
+        trackRuns(trackId: number) {
+            if (!trackStatus.get(trackId)) throw new HttpError(404, 'TRACK_NOT_FOUND', '赛道不存在')
+            return (listTrackRuns.all(trackId) as unknown as RecordRow[]).map(presentRow)
         },
 
         detail,
@@ -234,10 +274,17 @@ export function createRecordStore(db: DatabaseSync) {
             }
         },
 
-        create(input: RecordInput, actor: AuthorizedActor) {
+        create(input: RecordInput, mode: RecordEntryMode, actor: AuthorizedActor) {
             return writeTransaction(db, () => {
                 const { adminId } = actor.authorize()
                 requireActive(trackStatus, input.trackId, '赛道')
+                const hasRuns = Boolean(trackHasRuns.get(input.trackId))
+                if (mode === 'first' && hasRuns) {
+                    throw new HttpError(409, 'TRACK_ALREADY_HAS_RECORDS', '该赛道已有录入记录，请从赛道行录入新纪录')
+                }
+                if (mode === 'next' && !hasRuns) {
+                    throw new HttpError(409, 'TRACK_HAS_NO_RECORDS', '该赛道尚未录入成绩，请使用首次录入')
+                }
                 validateMetadata(input)
                 const clock = new Date()
                 const now = clock.toISOString()
@@ -266,6 +313,7 @@ export function createRecordStore(db: DatabaseSync) {
             return writeTransaction(db, () => {
                 const { adminId } = actor.authorize()
                 const before = requireRun(id)
+                requireValid(before)
                 validateMetadata(input, before)
                 if (input.driverId !== before.driverId) {
                     requireUnique(before.trackId, input.driverId, before.timeMs, before.achievedAt, id)

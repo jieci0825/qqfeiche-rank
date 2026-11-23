@@ -3,6 +3,13 @@ export function recordAchievedDate(achievedAtColumn: string) {
     return `date(${achievedAtColumn}, '+8 hours')`
 }
 
+export const millisecondsPerDay = 86_400_000
+
+export function recordHoldingMs(achievedAt: string, endMs: number) {
+    const startMs = Date.parse(`${achievedAt}T00:00:00+08:00`)
+    return Number.isFinite(startMs) && Number.isFinite(endMs) ? Math.max(0, endMs - startMs) : 0
+}
+
 // 参数是调用方固定的 SQL 表达式，查询值仍通过预编译语句绑定。
 export function latestValidVersionId(trackId: string, excludedRunId?: string) {
     const exclusion = excludedRunId === undefined ? '' : `AND candidate.id IS NOT ${excludedRunId}`

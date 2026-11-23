@@ -1,7 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { HttpError } from '../../http/errors.ts'
-import { latestValidVersionId, recordAchievedDate } from '../records/record-queries.ts'
-import type { voidReasons } from '../records/records.store.ts'
+import { latestValidVersionId, recordAchievedDate, recordHoldingMs } from '../records/record-queries.ts'
 
 const pageSize = 20
 
@@ -28,7 +27,6 @@ export interface VersionedRunRow {
     versionId: number
     runId: number
     kind: 'set' | 'restore'
-    previousVersionId: number | null
     effectiveAt: string
     timeMs: number
     achievedAt: string
@@ -43,8 +41,6 @@ export interface VersionedRunRow {
     petName: string | null
     screenshotObjectKey: string | null
     videoUrl: string | null
-    voidReason: typeof voidReasons[number] | null
-    voidedAt: string | null
 }
 
 type BoardRow = TrackRow & VersionedRunRow
@@ -63,13 +59,12 @@ const rankingTables = { driver: 'drivers', car: 'cars', pet: 'pets' } as const
 
 const trackColumns = `track.id AS trackId, track.name AS trackName, track.stars, track.status,
     cover.object_key AS coverObjectKey`
-const runColumns = `version.id AS versionId, version.kind, version.previous_version_id AS previousVersionId,
+const runColumns = `version.id AS versionId, version.kind,
     version.created_at AS effectiveAt, run.id AS runId, run.time_cs * 10 AS timeMs,
     ${recordAchievedDate('run.achieved_at')} AS achievedAt, driver.id AS driverId, driver.name AS driverName,
     avatar.object_key AS driverImageKey, team.id AS teamId, team.name AS teamName,
     car.id AS carId, car.name AS carName, pet.id AS petId, pet.name AS petName,
-    screenshot.object_key AS screenshotObjectKey, run.video_url AS videoUrl,
-    run.void_reason AS voidReason, run.voided_at AS voidedAt`
+    screenshot.object_key AS screenshotObjectKey, run.video_url AS videoUrl`
 const currentVersionId = latestValidVersionId('track.id')
 const optionalRecordJoins = `LEFT JOIN teams AS team ON team.id = run.team_id
     LEFT JOIN cars AS car ON car.id = run.car_id
@@ -80,11 +75,6 @@ const optionalRecordJoins = `LEFT JOIN teams AS team ON team.id = run.team_id
 
 function normalized(text: string) {
     return text.normalize('NFKC').trim().toLowerCase()
-}
-
-export function recordHoldingMs(achievedAt: string, endMs: number) {
-    const startMs = Date.parse(`${achievedAt}T00:00:00+08:00`)
-    return Number.isFinite(startMs) && Number.isFinite(endMs) ? Math.max(0, endMs - startMs) : 0
 }
 
 export function createPublicStore(db: DatabaseSync) {
@@ -118,6 +108,8 @@ export function createPublicStore(db: DatabaseSync) {
         )
         SELECT ${trackColumns}, ${runColumns}, track.currentVersionId
         FROM selected_track AS track LEFT JOIN record_versions AS version ON version.track_id = track.id
+            AND (version.kind = 'set' OR version.id = track.currentVersionId)
+            AND EXISTS (SELECT 1 FROM runs AS candidate WHERE candidate.id = version.run_id AND candidate.status = 'valid')
         LEFT JOIN runs AS run ON run.id = version.run_id
         LEFT JOIN drivers AS driver ON driver.id = run.driver_id
         ${optionalRecordJoins}
@@ -167,30 +159,26 @@ export function createPublicStore(db: DatabaseSync) {
 
             const versions = rows.filter(row => row.versionId !== null)
             const current = versions.find(version => version.versionId === track.currentVersionId) ?? null
-            const runIds = new Set<number>()
-            const versionsById = new Map(versions.map(version => [version.versionId, version]))
+            const validRuns = versions.filter(version => version.kind === 'set')
             let brokenCount = 0
             let longestHoldingMs = 0
-            let currentHoldingMs = 0
             const now = Date.now()
 
-            const history = versions.map((version, index) => {
-                const nextAt = versions[index - 1]?.effectiveAt ?? null
-                const endedAt = version.voidedAt && (!nextAt || version.voidedAt < nextAt) ? version.voidedAt : nextAt
+            const history = validRuns.map((version, index) => {
+                const newer = validRuns[index - 1]
+                const endedAt = newer?.effectiveAt ?? null
                 const holdingMs = recordHoldingMs(version.achievedAt, endedAt ? Date.parse(endedAt) : now)
-                const previous = version.previousVersionId === null ? undefined : versionsById.get(version.previousVersionId)
-                runIds.add(version.runId)
-                if (!version.voidedAt) {
-                    longestHoldingMs = Math.max(longestHoldingMs, holdingMs)
-                    if (version.kind === 'set' && previous && !previous.voidedAt && version.timeMs < previous.timeMs) brokenCount++
-                }
-                if (version.versionId === track.currentVersionId) currentHoldingMs = holdingMs
+                longestHoldingMs = Math.max(longestHoldingMs, holdingMs)
+                if (newer && newer.timeMs < version.timeMs) brokenCount++
                 return { version, endedAt, holdingMs }
             })
 
             return {
                 track, current, history,
-                stats: { historicalRecordCount: runIds.size, brokenCount, currentHoldingMs, longestHoldingMs },
+                stats: {
+                    historicalRecordCount: history.length, brokenCount, longestHoldingMs,
+                    currentHoldingMs: current ? recordHoldingMs(current.achievedAt, now) : 0,
+                },
             }
         },
         rankings(category: RankingCategory) {

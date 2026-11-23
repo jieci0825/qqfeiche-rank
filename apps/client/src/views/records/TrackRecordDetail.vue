@@ -6,7 +6,7 @@ import defaultTrackUrl from '@/assets/record-board/default-track.svg?url'
 import { usePublicQuery } from '@/composables/use-public-query'
 import { Icon } from '@/icons'
 import FallbackImage from './components/FallbackImage.vue'
-import { formatHoldingTime, formatRecordDateTime, formatRecordTime, voidReasonLabels } from './record-display'
+import { formatHoldingTime, formatRecordDateTime, formatRecordTime } from './record-display'
 
 const route = useRoute()
 const trackId = computed(() => {
@@ -72,7 +72,7 @@ const notFound = computed(() => error.value instanceof ApiError && error.value.s
             </section>
 
             <dl class="track-detail__stats" aria-label="赛道记录统计">
-                <div><dt>收录成绩</dt><dd>{{ data.stats.historicalRecordCount }} 条</dd></div>
+                <div><dt>有效成绩</dt><dd>{{ data.stats.historicalRecordCount }} 条</dd></div>
                 <div><dt>被打破</dt><dd>{{ data.stats.brokenCount }} 次</dd></div>
                 <div><dt>当前保持</dt><dd>{{ data.current ? formatHoldingTime(data.stats.currentHoldingMs) : '—' }}</dd></div>
                 <div><dt>最长有效保持</dt><dd>{{ data.current ? formatHoldingTime(data.stats.longestHoldingMs) : '—' }}</dd></div>
@@ -81,19 +81,15 @@ const notFound = computed(() => error.value instanceof ApiError && error.value.s
             <section class="track-detail__history" aria-labelledby="track-history-title">
                 <h2 id="track-history-title">纪录沿革</h2>
                 <ol v-if="data.history.length">
-                    <li v-for="version in data.history" :key="version.versionId" class="track-detail__version">
+                    <li v-for="version in data.history" :key="version.id" class="track-detail__version">
                         <header class="track-detail__version-header">
-                            <span>{{ version.kind === 'restore' ? '恢复' : '上榜' }}</span>
-                            <strong class="track-detail__version-time" :class="{ 'is-voided': version.state === 'voided' }">{{ formatRecordTime(version.timeMs) }}</strong>
+                            <strong class="track-detail__version-time">{{ formatRecordTime(version.timeMs) }}</strong>
                             <span>{{ version.driver.name }}{{ version.team ? ` · ${version.team.name}` : '' }}</span>
                             <span v-if="version.state === 'current'" class="track-detail__version-state">当前纪录</span>
-                            <span v-else-if="version.state === 'voided'" class="track-detail__version-state is-voided">
-                                已作废{{ version.voidReason ? ` · ${voidReasonLabels[version.voidReason]}` : '' }}
-                            </span>
                         </header>
                         <dl class="track-detail__facts">
                             <div><dt>达成</dt><dd><time :datetime="version.achievedAt">{{ version.achievedAt }}</time></dd></div>
-                            <div><dt>生效</dt><dd><time :datetime="version.effectiveAt">{{ formatRecordDateTime(version.effectiveAt) }}</time></dd></div>
+                            <div><dt>上榜</dt><dd><time :datetime="version.effectiveAt">{{ formatRecordDateTime(version.effectiveAt) }}</time></dd></div>
                             <div><dt>结束</dt><dd><time v-if="version.endedAt" :datetime="version.endedAt">{{ formatRecordDateTime(version.endedAt) }}</time><span v-else>持续至今</span></dd></div>
                             <div><dt>保持</dt><dd>{{ formatHoldingTime(version.holdingMs) }}</dd></div>
                         </dl>
@@ -296,19 +292,10 @@ const notFound = computed(() => error.value instanceof ApiError && error.value.s
                     .track-detail__version-time {
                         font-family: var(--tk-font-family-numeric);
                         font-size: 24px;
-
-                        &.is-voided {
-                            color: var(--tk-color-text-secondary);
-                            text-decoration: line-through;
-                        }
                     }
 
                     .track-detail__version-state {
                         color: var(--tk-color-primary);
-
-                        &.is-voided {
-                            color: var(--tk-color-rank-bronze);
-                        }
                     }
                 }
             }

@@ -1,13 +1,13 @@
 import type Koa from 'koa'
 import { HttpError } from '../../http/errors.ts'
 import type { CosUploads } from '../uploads/cos-uploads.ts'
-import { recordHoldingMs, type PublicStore, type TrackRow, type VersionedRunRow } from './public.store.ts'
+import { millisecondsPerDay, recordHoldingMs } from '../records/record-queries.ts'
+import type { PublicStore, TrackRow, VersionedRunRow } from './public.store.ts'
 
 const recordsPath = '/api/public/records'
 const allRecordsPath = `${recordsPath}/all`
 const rankingsPath = '/api/public/rankings'
 const trackPath = /^\/api\/public\/tracks\/([^/]+)$/
-const millisecondsPerDay = 86_400_000
 
 function invalid(message: string): never {
     throw new HttpError(400, 'INVALID_PUBLIC_QUERY', message)
@@ -108,8 +108,7 @@ export function createPublicRoutes(store: PublicStore, uploads?: CosUploads): Ko
             history: history.map(({ version, endedAt, holdingMs }) => ({
                 ...presentVersion(version, holdingMs),
                 endedAt,
-                voidReason: version.voidReason,
-                state: version.voidedAt !== null ? 'voided' : version.versionId === current?.versionId ? 'current' : 'historical',
+                state: version.runId === current?.runId ? 'current' : 'historical',
             })),
             stats,
         }

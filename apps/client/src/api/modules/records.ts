@@ -28,12 +28,9 @@ export interface RecordVersion {
     videoUrl: string | null
 }
 
-export type VoidReason = 'bug' | 'reset' | 'cheat' | 'boost' | 'mistake' | 'other'
-
 export interface HistoricalVersion extends RecordVersion {
-    state: 'current' | 'historical' | 'voided'
+    state: 'current' | 'historical'
     endedAt: string | null
-    voidReason: VoidReason | null
 }
 
 export interface TrackRecord {

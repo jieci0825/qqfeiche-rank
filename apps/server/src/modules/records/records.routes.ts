@@ -8,10 +8,12 @@ import { permissionActor } from '../rbac/rbac.guard.ts'
 import type { RbacStore } from '../rbac/rbac.store.ts'
 import type { CosUploads } from '../uploads/cos-uploads.ts'
 import { confirmImageUpload, signImageUpload } from '../uploads/image-uploads.ts'
-import { voidReasons, type ListedRecord, type RecordInput, type RecordMetadata, type RecordStore } from './records.store.ts'
+import { millisecondsPerDay, recordHoldingMs } from './record-queries.ts'
+import { voidReasons, type ListedRecord, type ListedRecordTrack, type RecordInput, type RecordMetadata, type RecordStore } from './records.store.ts'
 
 const basePath = '/api/admin/records'
 const resourcePath = /^\/([1-9]\d*)(?:\/(void-preview|void))?$/
+const trackRunsPath = /^\/tracks\/([1-9]\d*)\/runs$/
 const screenshotPurpose = { directory: 'records/screenshots', label: '成绩截图' }
 
 export function createRecordRoutes(records: RecordStore, auth: AuthService, rbac: RbacStore, uploads?: CosUploads): Koa.Middleware {
@@ -27,12 +29,26 @@ export function createRecordRoutes(records: RecordStore, auth: AuthService, rbac
         }
     }
 
+    function presentTrack(row: ListedRecordTrack, now: number) {
+        return {
+            id: row.trackId,
+            name: row.trackName,
+            status: row.status,
+            coverUrl: imageUrl(row.coverObjectKey),
+            current: row.runId === null ? null : {
+                id: row.runId, timeMs: row.timeMs, driverName: row.driverName, teamName: row.teamName,
+                achievedAt: row.achievedAt, holdingDays: Math.floor(recordHoldingMs(row.achievedAt, now) / millisecondsPerDay),
+            },
+        }
+    }
+
     return async (ctx, next) => {
         if (ctx.path !== basePath && !ctx.path.startsWith(`${basePath}/`)) return next()
         const path = ctx.path.slice(basePath.length)
         const resource = resourcePath.exec(path)
+        const trackRuns = trackRunsPath.exec(path)
         const action = resource?.[2]
-        const methods = !path ? ['GET', 'POST']
+        const methods = !path || trackRuns ? ['GET', 'POST']
             : path === '/options' || path === '/current' || action === 'void-preview' ? ['GET']
                 : path === '/screenshot/upload' || action === 'void' ? ['POST'] : resource ? ['GET', 'PUT'] : []
         if (!methods.length) return next()
@@ -72,6 +88,7 @@ export function createRecordRoutes(records: RecordStore, auth: AuthService, rbac
         const actor = permissionActor(ctx, auth, rbac, permission)
         const { adminId } = actor.authorize()
         const id = resource ? Number(resource[1]) : undefined
+        const trackId = trackRuns ? requiredId(Number(trackRuns[1]), '赛道') : undefined
         if (id !== undefined && !Number.isSafeInteger(id)) throw new HttpError(404, 'RECORD_NOT_FOUND', '成绩不存在')
 
         if (id !== undefined && action === 'void-preview') {
@@ -88,19 +105,24 @@ export function createRecordRoutes(records: RecordStore, auth: AuthService, rbac
                 ctx.body = { record: presentRecord(records.detail(id)) }
                 return
             }
+            if (trackId !== undefined) {
+                ctx.body = { items: records.trackRuns(trackId).map(presentRecord) }
+                return
+            }
             const { q, state = 'all', page = '1', pageSize = '20' } = ctx.query
-            if (state !== 'all' && state !== 'current' && state !== 'historical' && state !== 'voided') {
-                invalid('记录状态无效')
+            if (state !== 'all' && state !== 'current' && state !== 'empty') {
+                invalid('赛道记录状态无效')
             }
             if (q !== undefined && (typeof q !== 'string' || q.length > 100)) invalid('搜索关键词最多 100 字')
             const result = records.list(q?.trim().toLowerCase() ?? '', state, pageNumber(page), pageNumber(pageSize, 100))
-            ctx.body = { ...result, items: result.items.map(presentRecord) }
+            const now = Date.now()
+            ctx.body = { ...result, items: result.items.map(row => presentTrack(row, now)) }
             return
         }
 
         const body = await readJsonObject(ctx)
         const { screenshotUploadTicket, ...metadata } = parseMetadata(body)
-        const input = id === undefined ? parseCreate(body) : undefined
+        const input = id === undefined ? parseCreate(body, trackId) : undefined
         if (id !== undefined && ('trackId' in body || 'timeMs' in body || 'achievedAt' in body)) {
             invalid('赛道、成绩和达成日期录入后不可修改')
         }
@@ -108,7 +130,7 @@ export function createRecordRoutes(records: RecordStore, auth: AuthService, rbac
             ? await confirmImageUpload(screenshotUploadTicket, adminId, screenshotPurpose, uploads)
             : screenshotUploadTicket
         const record = input
-            ? records.create({ ...metadata, ...input, screenshotFile }, actor)
+            ? records.create({ ...metadata, ...input, screenshotFile }, trackId === undefined ? 'first' : 'next', actor)
             : records.update(id!, { ...metadata, screenshotFile }, actor)
         ctx.body = { record: presentRecord(record) }
         ctx.status = input ? 201 : 200
@@ -164,7 +186,8 @@ function parseMetadata(body: Record<string, unknown>): Omit<RecordMetadata, 'scr
     }
 }
 
-function parseCreate(body: Record<string, unknown>): Pick<RecordInput, 'trackId' | 'timeMs' | 'achievedAt'> {
+function parseCreate(body: Record<string, unknown>, trackId?: number): Pick<RecordInput, 'trackId' | 'timeMs' | 'achievedAt'> {
+    if (trackId !== undefined && 'trackId' in body) invalid('请在赛道对应的入口录入新纪录')
     const { timeMs, achievedAt } = body
     if (typeof timeMs !== 'number' || !Number.isInteger(timeMs) || timeMs < 1 || timeMs >= 6000000) {
         invalid('成绩必须大于 0 且小于 100 分钟')
@@ -177,7 +200,7 @@ function parseCreate(body: Record<string, unknown>): Pick<RecordInput, 'trackId'
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== achievedAt) {
         invalid('请输入有效的达成日期')
     }
-    return { trackId: requiredId(body.trackId, '赛道'), timeMs, achievedAt }
+    return { trackId: trackId ?? requiredId(body.trackId, '赛道'), timeMs, achievedAt }
 }
 
 function parseVoid(body: Record<string, unknown>): Parameters<RecordStore['void']>[1] {

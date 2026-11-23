@@ -1,8 +1,21 @@
 import { useAuthStore } from '@/stores/auth'
+import type { AdminApiPath } from '../core/client'
 import { uploadImage } from '../core/image-upload'
 
-export type RecordState = 'current' | 'historical' | 'voided'
+export type RecordStatus = 'valid' | 'voided'
+export type RecordTrackFilter = 'all' | 'current' | 'empty'
 export type RecordVoidReason = 'bug' | 'reset' | 'cheat' | 'boost' | 'mistake' | 'other'
+
+export interface RecordTrack {
+    id: number
+    name: string
+    coverUrl: string | null
+    status: 'active' | 'disabled' | 'archived'
+    current: Pick<CurrentRecord, 'id' | 'timeMs' | 'driverName' | 'achievedAt'> & {
+        teamName: string | null
+        holdingDays: number
+    } | null
+}
 
 export interface RecordItem {
     id: number
@@ -24,7 +37,8 @@ export interface RecordItem {
     screenshotUrl: string | null
     videoUrl: string | null
     note: string | null
-    state: RecordState
+    status: RecordStatus
+    isCurrent: boolean
     effectiveAt: string | null
     createdAt: string
     createdByName: string | null
@@ -83,11 +97,15 @@ export interface RecordVoidImpact {
     recovery: CurrentRecord | null
 }
 
-export function listRecords(query: { q: string; state: RecordState | 'all'; page: number }, signal: AbortSignal) {
+export function listRecordTracks(query: { q: string; state: RecordTrackFilter; page: number }, signal: AbortSignal) {
     const params = new URLSearchParams({ q: query.q, state: query.state, page: String(query.page) })
-    return useAuthStore().request<{ items: RecordItem[]; total: number; page: number; pageSize: number }>(
+    return useAuthStore().request<{ items: RecordTrack[]; total: number; page: number; pageSize: number }>(
         `/api/admin/records?${params}`, { signal },
     )
+}
+
+export function listTrackRuns(trackId: number, signal: AbortSignal) {
+    return useAuthStore().request<{ items: RecordItem[] }>(`/api/admin/records/tracks/${trackId}/runs`, { signal })
 }
 
 export function getRecord(id: number, signal: AbortSignal) {
@@ -102,8 +120,10 @@ export function getCurrentRecord(trackId: number, signal: AbortSignal) {
     return useAuthStore().request<{ current: CurrentRecord | null }>(`/api/admin/records/current?trackId=${trackId}`, { signal })
 }
 
-export function createRecord(input: RecordInput, signal: AbortSignal) {
-    return useAuthStore().request<{ record: RecordDetail }>('/api/admin/records', { method: 'POST', body: input, signal })
+export function createRecord({ trackId, ...input }: RecordInput, mode: 'first' | 'next', signal: AbortSignal) {
+    const path: AdminApiPath = mode === 'first' ? '/api/admin/records' : `/api/admin/records/tracks/${trackId}/runs`
+    const body = mode === 'first' ? { trackId, ...input } : input
+    return useAuthStore().request<{ record: RecordDetail }>(path, { method: 'POST', body, signal })
 }
 
 export function updateRecord(id: number, input: RecordMetadata, signal: AbortSignal) {

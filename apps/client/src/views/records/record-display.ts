@@ -1,15 +1,9 @@
-import type { VoidReason } from '@/api'
-
 const hourMs = 3_600_000
 const dayMs = 24 * hourMs
 const dateTime = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Shanghai', dateStyle: 'short', timeStyle: 'short',
 })
 const date = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', dateStyle: 'short' })
-
-export const voidReasonLabels: Record<VoidReason, string> = {
-    bug: '卡 BUG', reset: '卡复位', cheat: '外挂', boost: '代跑', mistake: '录入错误', other: '其他',
-}
 
 export const trackDistanceLabels = { short: '短图', medium: '中图', long: '长图' }
 

@@ -1,7 +1,7 @@
-import type { RecordState, RecordVoidReason } from '@/api'
+import type { RecordStatus, RecordVoidReason } from '@/api'
 
-export const recordStateLabels: Record<RecordState, string> = {
-    current: '当前', historical: '历史', voided: '已作废',
+export const recordStatusLabels: Record<RecordStatus, string> = {
+    valid: '上榜', voided: '已作废',
 }
 
 export const recordVoidReasonLabels: Record<RecordVoidReason, string> = {

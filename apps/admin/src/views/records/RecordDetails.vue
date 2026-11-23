@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RecordDetail } from '@/api'
-import { formatRecordDate, formatRecordTime, recordStateLabels, recordVoidReasonLabels } from './record-display'
+import { formatRecordDate, formatRecordTime, recordStatusLabels, recordVoidReasonLabels } from './record-display'
 import RecordImagePreview from './RecordImagePreview.vue'
 
 defineProps<{ record: RecordDetail }>()
@@ -11,7 +11,7 @@ const emit = defineEmits<{ preview: [src: string] }>()
     <div class="record-details">
         <dl class="record-details__fields">
             <div><dt>成绩</dt><dd>{{ formatRecordTime(record.timeMs) }}</dd></div>
-            <div><dt>状态</dt><dd>{{ recordStateLabels[record.state] }}</dd></div>
+            <div><dt>状态</dt><dd>{{ recordStatusLabels[record.status] }}{{ record.isCurrent ? ' · 当前纪录' : '' }}</dd></div>
             <div><dt>车手</dt><dd>{{ record.driverName }}</dd></div>
             <div><dt>车队</dt><dd>{{ record.teamName || '—' }}</dd></div>
             <div><dt>赛车</dt><dd>{{ record.carName || '—' }}</dd></div>
@@ -33,10 +33,14 @@ const emit = defineEmits<{ preview: [src: string] }>()
             <div v-if="record.note" class="record-details__wide"><dt>备注</dt><dd>{{ record.note }}</dd></div>
         </dl>
 
-        <section v-if="record.voidReason" class="record-details__section">
+        <section v-if="record.status === 'voided'" class="record-details__section">
             <h3>作废信息</h3>
-            <p>{{ recordVoidReasonLabels[record.voidReason] }} · {{ formatRecordDate(record.voidedAt) }} · {{ record.voidedByName || '—' }}</p>
-            <p v-if="record.voidNote">{{ record.voidNote }}</p>
+            <dl class="record-details__fields">
+                <div><dt>原因</dt><dd>{{ record.voidReason ? recordVoidReasonLabels[record.voidReason] : '—' }}</dd></div>
+                <div><dt>作废时间</dt><dd>{{ formatRecordDate(record.voidedAt) }}</dd></div>
+                <div><dt>操作人</dt><dd>{{ record.voidedByName || '—' }}</dd></div>
+                <div v-if="record.voidNote" class="record-details__wide"><dt>作废说明</dt><dd>{{ record.voidNote }}</dd></div>
+            </dl>
         </section>
         <section v-if="record.versions.length" class="record-details__section">
             <h3>上榜历史</h3>
