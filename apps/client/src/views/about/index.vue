@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Icon } from '@/icons'
-import RecordFeedbackDialog from './components/RecordFeedbackDialog.vue'
-
-const feedbackDialog = ref<InstanceType<typeof RecordFeedbackDialog> | null>(null)
 </script>
 
 <template>
@@ -76,21 +71,16 @@ const feedbackDialog = ref<InstanceType<typeof RecordFeedbackDialog> | null>(nul
                 </div>
                 <div class="about-notes__item">
                     <dt><span aria-hidden="true">三</span>记录反馈</dt>
-                    <dd>如果发现记录有误，或有新纪录尚未及时更新，可点击左下角的提交入口反馈，作者会在后台查看并核对。</dd>
+                    <dd>如果发现记录有误，或有新纪录尚未更新，可以添加 QQ 3217955626 联系作者。</dd>
                 </div>
             </dl>
         </section>
 
         <footer class="about-page__footer">
-            <button class="about-page__submit" type="button" @click="feedbackDialog?.open()">
-                <Icon icon="ep:edit-pen" aria-hidden="true" />
-                提交信息
-            </button>
             <RouterLink :to="{ name: 'records' }">
                 重返赛道 <span aria-hidden="true">⟶</span>
             </RouterLink>
         </footer>
-        <RecordFeedbackDialog ref="feedbackDialog" />
     </section>
 </template>
 
@@ -327,28 +317,19 @@ const feedbackDialog = ref<InstanceType<typeof RecordFeedbackDialog> | null>(nul
 
     .about-page__footer {
         display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
+        justify-content: flex-end;
         padding-top: 23px;
         font-size: 13px;
         letter-spacing: 2px;
 
-        .about-page__submit,
         a {
             display: inline-flex;
             align-items: center;
             gap: 14px;
             padding: 4px 0;
-            border: 0;
             border-bottom: 1px solid transparent;
             color: var(--tk-color-primary);
-            background: transparent;
-            font: inherit;
-            letter-spacing: inherit;
             text-decoration: none;
-            cursor: pointer;
 
             &:hover {
                 border-color: var(--tk-color-primary);
