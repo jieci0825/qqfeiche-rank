@@ -102,7 +102,7 @@ const current = computed(() => props.record.current)
                     <span>天</span>
                 </div>
                 <span class="record-card__updated">
-                    {{ current.kind === 'restore' ? '恢复' : '上榜' }}
+                    {{ current.kind === 'restore' ? '恢复' : '录入日期' }}
                     <time :datetime="current.effectiveAt">{{
                         formatRecordDate(current.effectiveAt)
                     }}</time>
