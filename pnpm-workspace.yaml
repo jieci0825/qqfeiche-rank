@@ -23,4 +23,5 @@ catalog:
   "@types/node": ^26.6.6
 
 allowBuilds:
-  '@parcel/watcher': set this to true or false
+  # Use the prebuilt optional packages from the lockfile.
+  '@parcel/watcher': false

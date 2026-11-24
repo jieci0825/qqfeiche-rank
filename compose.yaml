@@ -1,0 +1,38 @@
+name: qqfeiche-rank
+
+services:
+    qqfeiche-nginx:
+        build:
+            context: .
+            target: frontend
+        restart: unless-stopped
+        depends_on:
+            - qqfeiche-api
+        networks:
+            - default
+            - gateway-net
+
+    qqfeiche-api:
+        build:
+            context: .
+            target: api
+        restart: unless-stopped
+        env_file: .env.production
+        environment:
+            NODE_ENV: production
+            HOST: 0.0.0.0
+            PORT: '9433'
+            TRUST_PROXY: '1'
+            ADMIN_ORIGIN: http://feiche-admin.coderjc.cn
+            ALLOW_HTTP_ADMIN_ORIGIN: '1'
+            DATABASE_PATH: /app/data/qqfeiche.sqlite
+        volumes:
+            - sqlite-data:/app/data
+
+networks:
+    gateway-net:
+        external: true
+        name: gateway-net
+
+volumes:
+    sqlite-data:

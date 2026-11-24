@@ -10,6 +10,7 @@
             "cache": false,
             "persistent": true,
             "passThroughEnv": [
+                "ALLOW_HTTP_ADMIN_ORIGIN",
                 "ADMIN_USERNAME",
                 "ADMIN_PASSWORD",
                 "ADMIN_ORIGIN",

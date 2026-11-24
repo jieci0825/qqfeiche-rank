@@ -1,0 +1,14 @@
+.git
+**/dist
+!apps/client/dist
+!apps/client/dist/**
+!apps/admin/dist
+!apps/admin/dist/**
+**/.env
+**/.env.*
+**/.npmrc
+**/node_modules
+**/.pnpm-store
+**/.turbo
+**/.DS_Store
+apps/server/data

@@ -164,13 +164,84 @@ pnpm start         # 启动 Koa API 服务
 
 开发环境下，两个前端的 Vite 都会把 `/api` 代理到 `http://127.0.0.1:9433`。
 
-## 生产部署
+## Docker 生产部署
 
-前端和 API 服务独立部署。
+访问入口为 `https://feiche.coderjc.cn`（client）和 `http://feiche-admin.coderjc.cn`（admin）。公共网关通过同一宿主机的 `gateway-net` 转发到 `qqfeiche-nginx`，由项目 Nginx 按域名提供两套前端，并将各自的 `/api/` 请求转发到独立的 Koa 容器 `qqfeiche-api`。两个项目容器都只在 Docker 网络内提供服务。
 
-- 使用 `pnpm build` 构建前端。将 `apps/client/dist` 和 `apps/admin/dist` 分别部署到各自站点的根路径 `/`，页面路由回退到所在站点的 `index.html`。
-- 使用 `pnpm start` 启动 Koa API 服务。生产入口将 `/api/` 请求转发到 Koa，保留原路径，使两套前端均可通过同源路径访问 API。
-- 设置 `NODE_ENV=production`、`ADMIN_ORIGIN=https://<管理端域名>` 和持久化的 `DATABASE_PATH`。由反代终止 TLS 时，让 Koa 仅对受信反代可达，设置 `TRUST_PROXY=1`，并在反代上覆盖 `X-Forwarded-Proto` 和 `X-Forwarded-For`。HTTPS 来源下 Refresh Cookie 自动启用 `Secure`。
+### 首次部署
+
+将两个域名的 DNS 记录指向公共网关，并确保网关已创建 `gateway-net`。本地和服务器需要安装 `rsync`，本地需能通过 SSH 登录服务器。
+
+在**本地项目根目录**执行以下命令，替换 `deploy_host` 为服务器的 SSH 登录地址或 SSH 配置别名。`deploy_dir` 是服务器登录用户家目录下的部署目录。
+
+```bash
+deploy_host=deploy@your-server
+deploy_dir=qqfeiche-rank
+
+ssh "$deploy_host" "mkdir -p '$deploy_dir'" &&
+    rsync -azR -e ssh .dockerignore Dockerfile compose.yaml \
+        package.json pnpm-lock.yaml pnpm-workspace.yaml \
+        apps/client/package.json apps/admin/package.json \
+        apps/server/package.json apps/server/src/ deploy/ \
+        "$deploy_host:$deploy_dir/"
+```
+
+在**服务器部署目录**创建 `.env.production`，设置首次启动时用于初始化后台账号的 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`。使用 COS 时，在同一个文件里配置上文的五项 `COS_*` 变量，COS CORS 放行 `http://feiche-admin.coderjc.cn`，并为 client 使用 HTTPS 的 `COS_PUBLIC_BASE_URL`。
+
+按下一节在本地构建并上传两套 `dist`。上传完成后，在本地通过 SSH 启动服务器上的 Compose 服务。
+
+```bash
+ssh "$deploy_host" "cd '$deploy_dir' && docker compose up -d --build"
+```
+
+Compose 将 SQLite 数据目录挂载到命名卷 `qqfeiche-rank_sqlite-data`。首次用空卷启动时会创建数据库，重新构建或替换容器会继续使用同一个卷。
+
+### 构建并上传前端
+
+在**本地项目根目录**运行以下命令，使用首次部署时设置的 `deploy_host` 和 `deploy_dir`。服务器上的 Nginx 镜像直接复制这两套构建产物。
+
+```bash
+pnpm build &&
+    ssh "$deploy_host" "mkdir -p '$deploy_dir/apps/client/dist' '$deploy_dir/apps/admin/dist'" &&
+    rsync -az -e ssh --delete apps/client/dist/ "$deploy_host:$deploy_dir/apps/client/dist/" &&
+    rsync -az -e ssh --delete apps/admin/dist/ "$deploy_host:$deploy_dir/apps/admin/dist/"
+```
+
+`--delete` 会清理服务器对应 `dist` 目录里的旧构建文件。日常更新前端时，确认上传成功后只替换 Nginx 容器。
+
+```bash
+ssh "$deploy_host" "cd '$deploy_dir' && docker compose up -d --build --no-deps qqfeiche-nginx"
+```
+
+只更新其中一端时，可用 `pnpm --filter @qqfeiche/client build` 或 `pnpm --filter @qqfeiche/admin build` 单独构建，再同步对应的 `dist` 并执行上面的 Nginx 更新命令。服务器部署目录需保留另一端上次上传的 `dist`。
+
+### 接入公共网关
+
+在部署机器上，从项目根目录执行以下命令。将 `gateway_dir` 替换为公共网关的仓库路径。
+
+```bash
+gateway_dir=/path/to/gateway
+cp deploy/gateway/qqfeiche-rank.conf "$gateway_dir/conf.d/"
+docker compose -f "$gateway_dir/docker-compose.yml" exec nginx nginx -t && \
+    docker compose -f "$gateway_dir/docker-compose.yml" exec nginx nginx -s reload
+```
+
+这一步启用 admin 的 HTTP 转发和 client 的 ACME 验证入口。通过网关已经挂载的 webroot 为 client 签发证书。
+
+```bash
+sudo certbot certonly --webroot -w /var/www/certbot \
+    --cert-name feiche.coderjc.cn -d feiche.coderjc.cn
+```
+
+证书签发成功后，再将 client 的 HTTPS 配置放入网关并重新加载。之后将新证书纳入网关现有的续期流程，续期成功后重载 Nginx。
+
+```bash
+cp deploy/gateway/qqfeiche-rank-https.conf "$gateway_dir/conf.d/"
+docker compose -f "$gateway_dir/docker-compose.yml" exec nginx nginx -t && \
+    docker compose -f "$gateway_dir/docker-compose.yml" exec nginx nginx -s reload
+```
+
+当前 Compose 显式设置 `ADMIN_ORIGIN=http://feiche-admin.coderjc.cn` 和 `ALLOW_HTTP_ADMIN_ORIGIN=1`。HTTP 下后台登录凭据和会话令牌未经传输加密。以后为后台启用 HTTPS 时，更新网关配置及 COS CORS 来源，将 `ADMIN_ORIGIN` 改为 `https://feiche-admin.coderjc.cn`，并移除 `ALLOW_HTTP_ADMIN_ORIGIN`。HTTPS 请求的 Refresh Cookie 会自动启用 `Secure`。
 
 ## Element Plus 按需引入
 

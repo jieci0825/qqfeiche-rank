@@ -20,8 +20,11 @@ export function loadConfig(env: NodeJS.ProcessEnv) {
 
     const production = env.NODE_ENV === 'production'
     const adminOrigin = env.ADMIN_ORIGIN ? parseAdminOrigin(env.ADMIN_ORIGIN) : undefined
-    if (production && !adminOrigin?.startsWith('https://')) {
-        throw new Error('生产环境必须配置 HTTPS 的 ADMIN_ORIGIN')
+    if (production && !adminOrigin) {
+        throw new Error('生产环境必须配置 ADMIN_ORIGIN')
+    }
+    if (production && adminOrigin?.startsWith('http://') && env.ALLOW_HTTP_ADMIN_ORIGIN !== '1') {
+        throw new Error('生产环境使用 HTTP 的 ADMIN_ORIGIN 时必须设置 ALLOW_HTTP_ADMIN_ORIGIN=1')
     }
 
     const databasePath = env.DATABASE_PATH || defaultDatabasePath
