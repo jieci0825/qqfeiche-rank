@@ -18,6 +18,7 @@ package-lock.json
 /apps/server/.env
 /apps/server/data/
 /.env.production
+/scripts/deploy-local.js
 
 # Editor directories and files
 .vscode/*
