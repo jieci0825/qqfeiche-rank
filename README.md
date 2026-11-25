@@ -152,7 +152,7 @@ pnpm upload:client-assets
 
 命令读取环境变量和 `apps/server/.env` 中的 COS 配置，按文件名批量上传到 `COS_BUCKET` 的 `qqfeiche/assets/client/`。重复运行会更新同名对象，并将 `Cache-Control` 设为 `public, max-age=300`。执行上传的 CAM 子账号需有 `qqfeiche/assets/client/*` 的 `cos:PutObject` 权限。
 
-本地开发和生产环境的客户端都会在启动后调用 `GET /api/public/client-assets`。后端根据 `COS_PUBLIC_BASE_URL` 生成素材目录的访问前缀，客户端按文件名拼出图片地址。后端未配置 COS 或前缀获取失败时，客户端使用自带的 WebP。首次上线该功能时，上传图片后部署客户端和 API 容器。
+本地开发和生产环境的客户端都会在启动后调用 `GET /api/public/client-assets`。后端根据 `COS_PUBLIC_BASE_URL` 生成素材目录的访问前缀，客户端按文件名拼出图片地址。后端未配置 COS 或前缀获取失败时，客户端使用自带的 WebP。首次上线该功能时，先上传图片，再执行生产发布。
 
 ## 命令
 
@@ -181,52 +181,13 @@ pnpm start         # 启动 Koa API 服务
 
 访问入口为 `https://feiche.coderjc.cn`（client）和 `http://feiche-admin.coderjc.cn`（admin）。公共网关通过同一宿主机的 `gateway-net` 转发到 `qqfeiche-nginx`，由项目 Nginx 按域名提供两套前端，并将各自的 `/api/` 请求转发到独立的 Koa 容器 `qqfeiche-api`。两个项目容器都只在 Docker 网络内提供服务。
 
-### 首次部署
+在本地配置好 SSH 后，从仓库根目录运行 `pnpm deploy:prod`。命令在本地构建 Nginx 和 API 镜像，通过 SSH 上传并启动两个服务，然后检查用户端、管理端、API 和榜单记录查询。连接配置、上线前提和回滚命令见 [Docker 部署更新](docs/Docker部署更新.md)。
 
-将两个域名的 DNS 记录指向公共网关，并确保网关已创建 `gateway-net`。本地和服务器需要安装 `rsync`，本地需能通过 SSH 登录服务器。
-
-在**本地项目根目录**执行以下命令，替换 `deploy_host` 为服务器的 SSH 登录地址或 SSH 配置别名。`deploy_dir` 是服务器登录用户家目录下的部署目录。
-
-```bash
-deploy_host=deploy@your-server
-deploy_dir=qqfeiche-rank
-
-ssh "$deploy_host" "mkdir -p '$deploy_dir'" &&
-    rsync -azR -e ssh .dockerignore Dockerfile compose.yaml \
-        package.json pnpm-lock.yaml pnpm-workspace.yaml \
-        apps/client/package.json apps/admin/package.json \
-        apps/server/package.json apps/server/src/ deploy/ \
-        "$deploy_host:$deploy_dir/"
-```
-
-在**服务器部署目录**创建 `.env.production`，设置首次启动时用于初始化后台账号的 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`。使用 COS 时，在同一个文件里配置上文的五项 `COS_*` 变量，COS CORS 放行 `http://feiche-admin.coderjc.cn`，并为 client 使用 HTTPS 的 `COS_PUBLIC_BASE_URL`。
-
-按下一节在本地构建并上传两套 `dist`。随后按 [Docker 部署更新](docs/Docker部署更新.md)在本地构建并上传 API 镜像，再启动服务器上的 Compose 服务。
-
-Compose 将 SQLite 数据目录挂载到命名卷 `qqfeiche-rank_sqlite-data`。首次用空卷启动时会创建数据库，重新构建或替换容器会继续使用同一个卷。
-
-### 构建并上传前端
-
-在**本地项目根目录**运行以下命令，使用首次部署时设置的 `deploy_host` 和 `deploy_dir`。服务器上的 Nginx 镜像直接复制这两套构建产物。
-
-```bash
-pnpm build &&
-    ssh "$deploy_host" "mkdir -p '$deploy_dir/apps/client/dist' '$deploy_dir/apps/admin/dist'" &&
-    rsync -az -e ssh --delete apps/client/dist/ "$deploy_host:$deploy_dir/apps/client/dist/" &&
-    rsync -az -e ssh --delete apps/admin/dist/ "$deploy_host:$deploy_dir/apps/admin/dist/"
-```
-
-`--delete` 会清理服务器对应 `dist` 目录里的旧构建文件。日常更新前端时，确认上传成功后只替换 Nginx 容器。
-
-```bash
-ssh "$deploy_host" "cd '$deploy_dir' && docker compose up -d --build --no-deps qqfeiche-nginx"
-```
-
-只更新其中一端时，可用 `pnpm --filter @qqfeiche/client build` 或 `pnpm --filter @qqfeiche/admin build` 单独构建，再同步对应的 `dist` 并执行上面的 Nginx 更新命令。服务器部署目录需保留另一端上次上传的 `dist`。
+生产配置由服务器上的 `.env.production` 提供。Compose 将 SQLite 数据目录挂载到命名卷 `qqfeiche-rank_sqlite-data`，替换容器后继续使用同一个卷。空卷首次启动时会创建数据库。
 
 ### 接入公共网关
 
-在部署机器上，从项目根目录执行以下命令。将 `gateway_dir` 替换为公共网关的仓库路径。
+首次配置公共网关时，在网关所在机器上执行以下命令。将 `gateway_dir` 替换为公共网关的目录，并从本仓库准备 `deploy/gateway/` 下的两份网关配置。已有网关可直接发布应用。
 
 ```bash
 gateway_dir=/path/to/gateway

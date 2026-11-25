@@ -2,9 +2,8 @@ name: qqfeiche-rank
 
 services:
     qqfeiche-nginx:
-        build:
-            context: .
-            target: frontend
+        image: 'qqfeiche-rank-nginx:${RELEASE_TAG:?请设置 RELEASE_TAG}'
+        pull_policy: never
         restart: unless-stopped
         depends_on:
             - qqfeiche-api
@@ -13,11 +12,23 @@ services:
             - gateway-net
 
     qqfeiche-api:
-        build:
-            context: .
-            target: api
+        image: 'qqfeiche-rank-api:${RELEASE_TAG:?请设置 RELEASE_TAG}'
+        pull_policy: never
         restart: unless-stopped
         env_file: .env.production
+        healthcheck:
+            test:
+                - CMD
+                - node
+                - -e
+                - >-
+                    require('node:http').get('http://127.0.0.1:9433/api/health', response => {
+                        response.resume(); process.exitCode = response.statusCode === 200 ? 0 : 1
+                    }).on('error', () => { process.exitCode = 1 })
+            interval: 15s
+            timeout: 3s
+            retries: 3
+            start_period: 5s
         environment:
             NODE_ENV: production
             HOST: 0.0.0.0

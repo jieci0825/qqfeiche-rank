@@ -9,14 +9,18 @@ ENV CI=true
 WORKDIR /workspace
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN npm install --global "$(node -p 'require("./package.json").packageManager')"
+RUN --mount=type=cache,id=qqfeiche-rank-npm,target=/root/.npm,sharing=locked \
+    npm install --global "$(node -p 'require("./package.json").packageManager')"
 
 COPY apps/client/package.json ./apps/client/
 COPY apps/admin/package.json ./apps/admin/
 COPY apps/server/package.json ./apps/server/
 
 FROM workspace AS server-deps
-RUN pnpm --filter @qqfeiche/server install --prod --frozen-lockfile --config.enable-global-virtual-store=false
+RUN --mount=type=cache,id=qqfeiche-rank-pnpm-store,target=/workspace/.pnpm-store,sharing=locked \
+    --mount=type=cache,id=qqfeiche-rank-pnpm-metadata,target=/root/.cache/pnpm,sharing=locked \
+    pnpm --filter @qqfeiche/server install --prod --frozen-lockfile \
+        --config.cache-dir=/root/.cache/pnpm --config.enable-global-virtual-store=false
 
 FROM node:24-bookworm-slim AS api
 WORKDIR /app

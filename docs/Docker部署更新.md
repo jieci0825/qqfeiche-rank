@@ -1,48 +1,45 @@
 # Docker 部署更新
 
-发布前，先从本地上传本次改动。已配置本地部署脚本时，在本地仓库根目录运行 `node scripts/deploy-local.js`。也可以按 [README 的 Docker 部署步骤](../README.md#docker-生产部署)手动上传。
+在本地仓库根目录运行 `pnpm deploy:prod`。脚本在本地安装依赖、构建两套前端，并生成 `linux/amd64` 的 Nginx 和 API 镜像。两个镜像使用同一个发布版本号，压缩后和 Compose 配置一起通过 SSH 上传。生产机导入并校验镜像，用 Compose 启动容器。
 
-当前生产服务器为 `linux/amd64`。发布涉及 API 时，在本地构建 API 镜像并上传。服务器构建 API 会执行 `pnpm install`，内存紧张时可能导致磁盘 I/O 等待和其他容器响应超时。
+## 首次配置
 
-## 构建并上传 API 镜像
+本地需要仓库指定的 Node.js 和 pnpm、Docker Buildx、SSH、SCP 和 gzip。生产机需要 Docker、支持 `up --wait` 的 Compose v2，以及 Linux 的 `flock`。SSH 账号须能写入部署目录并运行 Docker，服务器公钥须已核实并加入本地 `known_hosts`。
 
-首次部署、更新整个项目或只更新 API 时，在本地仓库根目录执行。将 `deploy_host` 改为可登录部署服务器的 SSH 地址或别名。本地需要 Docker Buildx。
+在本地仓库根目录创建 `.env.deploy.local`，该文件由 Git 忽略。`DEPLOY_HOST` 可以是 SSH 地址或 `~/.ssh/config` 中的别名。使用别名或 SSH agent 提供密钥时，可以省略 `DEPLOY_SSH_KEY`。
 
-```bash
-deploy_host=deploy@your-server
-api_image=qqfeiche-rank-qqfeiche-api:latest
-
-(
-    set -o pipefail
-    docker buildx build --platform linux/amd64 --target api --progress plain --load \
-        --tag "$api_image" . &&
-        docker image save "$api_image" | gzip -1 | ssh "$deploy_host" docker image load
-)
+```dotenv
+DEPLOY_HOST=deploy@your-server
+DEPLOY_DIR=/opt/apps/qqfeiche-rank
+DEPLOY_SSH_KEY=~/.ssh/your-deploy-key
 ```
 
-看到 `Loaded image` 后，登录服务器并进入 `/opt/apps/qqfeiche-rank`，按发布范围执行下面的命令。
+已有生产环境继续使用原部署目录中的 `.env.production`、SQLite 卷 `qqfeiche-rank_sqlite-data` 和公共网关的 `gateway-net`。新服务器应先准备部署目录、公共网关和 `gateway-net`，并将域名指向网关。首次启动空数据库时，在服务器上的 `.env.production` 设置 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`。使用 COS 时，在同一个文件配置 `COS_*` 变量，放行管理端来源，并为用户端提供 HTTPS 的资源地址。 [网关与证书配置](../README.md#接入公共网关) · [COS 配置](../README.md#赛道管理)
 
-## 首次启动或更新整个项目
-
-确认 API 镜像已上传，两套前端 `dist` 已同步。首次部署还需准备 `.env.production` 和 `gateway-net`。先单独构建 Nginx，再启动两个服务。
+## 发布
 
 ```bash
-docker compose --progress plain build qqfeiche-nginx &&
-    docker compose up -d --no-build --pull never
+pnpm deploy:prod
 ```
 
-## 只更新前端
+脚本导入并确认两个镜像后才替换容器。Compose 等待 API 就绪，随后本地脚本通过公共域名检查两个首页、`/api/health` 和 `/api/public/records?page=1`。脚本会输出新版本和上一版本。第一次切换时，脚本会给原有容器正在使用的镜像补一个 `before-` 开头的版本，供首次回滚使用。
 
-只发布用户端（client）、管理端（admin）或项目 Nginx 配置时执行。构建 Nginx 镜像时会读取两套前端 `dist`，只更新一端时，服务器上要保留另一端的构建产物。
+上线检查通过后，脚本按版本号清理本次在本地构建的两个镜像。生产机保留镜像用于回滚。如果本地清理失败，脚本会提示，发布结果仍为成功。
+
+生产机在 `.releases/` 下保存每版的 Compose 配置。`.releases/current` 记录最近一次通过启动检查的版本，首次切换前会先记录原有版本。部署目录中的 `compose.yaml` 指向所记录版本的配置。镜像归档在导入后清理，已导入的镜像标签保留在 Docker 中。例行检查可在生产部署目录执行以下命令。
 
 ```bash
-docker compose up -d --build --no-deps qqfeiche-nginx
+RELEASE_TAG="$(readlink .releases/current)" docker compose -p qqfeiche-rank -f compose.yaml ps
 ```
 
-## 只更新 API
+## 回滚应用
 
-只发布服务端源码或服务端依赖改动时，上传新镜像后执行。
+在本地运行以下命令，把示例版本替换成发布时输出的上一版本。
 
 ```bash
-docker compose up -d --no-build --pull never --no-deps qqfeiche-api
+pnpm deploy:prod --rollback 2026-11-25-a1b2c3d4
 ```
+
+回滚使用生产机上保留的镜像和 Compose 配置，并继续使用现有 SQLite 卷。发布包含数据库迁移时，发布前备份 SQLite，回滚前确认旧应用兼容当前数据库结构。
+
+如果脚本报告公网检查失败，容器已经切换，先看脚本标出的失败项。若 Compose 的启动检查失败，容器可能已经部分切换，脚本会输出查看容器日志的命令。
