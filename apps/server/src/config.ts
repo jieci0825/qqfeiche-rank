@@ -40,7 +40,7 @@ export function loadConfig(env: NodeJS.ProcessEnv) {
     }
 }
 
-function loadCosConfig(env: NodeJS.ProcessEnv): CosConfig | undefined {
+export function loadCosConfig(env: NodeJS.ProcessEnv): CosConfig | undefined {
     const secretId = env.COS_SECRET_ID?.trim()
     const secretKey = env.COS_SECRET_KEY?.trim()
     const bucket = env.COS_BUCKET?.trim()

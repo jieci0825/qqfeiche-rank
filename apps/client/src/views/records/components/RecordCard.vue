@@ -5,12 +5,12 @@ import type { TrackRecord } from '@/api'
 import defaultDriverUrl from '@/assets/record-board/default-driver.svg?url'
 import defaultTeamUrl from '@/assets/record-board/default-team.svg?url'
 import defaultTrackUrl from '@/assets/record-board/default-track.svg?url'
-import daysBrushUrl from '@/assets/record-board/record-days-brush.png'
+import { clientBackgroundImage } from '@/api/modules/client-assets'
 import FallbackImage from './FallbackImage.vue'
 import TrackRecordTags from './TrackRecordTags.vue'
 import { formatRecordDate, formatRecordTime } from '../record-display'
 
-const holdingBrushStyle = { backgroundImage: `url("${daysBrushUrl}")` }
+const holdingBrushStyle = computed(() => ({ backgroundImage: clientBackgroundImage('record-days-brush') }))
 
 const props = defineProps<{
     record: TrackRecord

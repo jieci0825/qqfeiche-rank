@@ -12,6 +12,7 @@
         "dev:admin": "turbo dev --filter=@qqfeiche/admin",
         "dev:server": "turbo dev --filter=@qqfeiche/server",
         "build": "turbo build --filter=@qqfeiche/client --filter=@qqfeiche/admin",
+        "upload:client-assets": "node --env-file-if-exists=apps/server/.env apps/server/scripts/upload-client-assets.ts",
         "typecheck": "turbo typecheck",
         "start": "pnpm --filter @qqfeiche/server start"
     },

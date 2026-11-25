@@ -141,6 +141,19 @@ COS_PUBLIC_BASE_URL=https://assets.example.com/
 - 存储桶 CORS 放行后台页面来源的 `POST`，例如生产环境的 `ADMIN_ORIGIN` 或本地的 `http://localhost:9432`。
 - `COS_PUBLIC_BASE_URL` 使用站点访问者可读取的 HTTP 或 HTTPS 资源根地址。使用私有桶时，为公开封面配置可访问的 CDN 域名并开启 COS 回源鉴权。使用公读私写的专用桶时，也可填写桶的默认域名。
 
+#### 客户端静态图片
+
+客户端的页面背景、站点标志、排行榜装饰图和默认赛车、宠物图使用 `apps/client/public/qqfeiche/assets/client/` 下的 WebP。发布或更新素材时，在仓库根目录运行：
+
+```bash
+pnpm upload:client-assets --dry-run
+pnpm upload:client-assets
+```
+
+命令读取环境变量和 `apps/server/.env` 中的 COS 配置，按文件名批量上传到 `COS_BUCKET` 的 `qqfeiche/assets/client/`。重复运行会更新同名对象，并将 `Cache-Control` 设为 `public, max-age=300`。执行上传的 CAM 子账号需有 `qqfeiche/assets/client/*` 的 `cos:PutObject` 权限。
+
+本地开发和生产环境的客户端都会在启动后调用 `GET /api/public/client-assets`。后端根据 `COS_PUBLIC_BASE_URL` 生成素材目录的访问前缀，客户端按文件名拼出图片地址。后端未配置 COS 或前缀获取失败时，客户端使用自带的 WebP。首次上线该功能时，上传图片后部署客户端和 API 容器。
+
 ## 命令
 
 在仓库根目录执行：

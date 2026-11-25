@@ -3,19 +3,26 @@ import { createPinia } from 'pinia'
 import { ElInfiniteScroll, ElLoading } from 'element-plus'
 import '@fontsource/barlow-condensed/latin-400.css'
 import '@fontsource/barlow-condensed/latin-700.css'
+import { loadClientAssetBase } from '@/api/modules/client-assets'
 import '@/icons'
 import '@/styles/element/manual'
 import '@/styles/index.scss'
 import App from './App.vue'
 import router from './router'
 
-const app = createApp(App)
+async function bootstrap() {
+    await loadClientAssetBase()
 
-app.use(createPinia())
-app.use(router)
+    const app = createApp(App)
 
-// 这两个是指令 / 服务式插件，不在模板组件扫描范围内，需要单独注册。
-app.use(ElLoading)
-app.directive('infinite-scroll', ElInfiniteScroll)
+    app.use(createPinia())
+    app.use(router)
 
-app.mount('#app')
+    // 这两个是指令 / 服务式插件，不在模板组件扫描范围内，需要单独注册。
+    app.use(ElLoading)
+    app.directive('infinite-scroll', ElInfiniteScroll)
+
+    app.mount('#app')
+}
+
+void bootstrap()

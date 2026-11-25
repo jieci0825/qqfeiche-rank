@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
     src?: string | null
-    fallback: string
+    fallback?: string
     alt: string
 }>()
 const failed = ref(false)

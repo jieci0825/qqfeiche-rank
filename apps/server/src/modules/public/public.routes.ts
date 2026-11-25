@@ -2,11 +2,13 @@ import type Koa from 'koa'
 import { HttpError } from '../../http/errors.ts'
 import type { CosUploads } from '../uploads/cos-uploads.ts'
 import { millisecondsPerDay, recordHoldingMs } from '../records/record-queries.ts'
+import { clientAssetPrefix } from './client-assets.ts'
 import type { PublicStore, TrackRow, VersionedRunRow } from './public.store.ts'
 
 const recordsPath = '/api/public/records'
 const allRecordsPath = `${recordsPath}/all`
 const rankingsPath = '/api/public/rankings'
+const clientAssetsPath = '/api/public/client-assets'
 const trackPath = /^\/api\/public\/tracks\/([^/]+)$/
 
 function invalid(message: string): never {
@@ -62,12 +64,20 @@ export function createPublicRoutes(store: PublicStore, uploads?: CosUploads): Ko
 
     return async (ctx, next) => {
         const trackParams = trackPath.exec(ctx.path)
-        if (ctx.path !== recordsPath && ctx.path !== allRecordsPath && ctx.path !== rankingsPath && !trackParams) return next()
+        if (
+            ctx.path !== recordsPath && ctx.path !== allRecordsPath && ctx.path !== rankingsPath &&
+            ctx.path !== clientAssetsPath && !trackParams
+        ) return next()
 
         ctx.set('Cache-Control', 'no-store')
         if (ctx.method !== 'GET' && ctx.method !== 'HEAD') {
             ctx.set('Allow', 'GET, HEAD')
             throw new HttpError(405, 'METHOD_NOT_ALLOWED', '不支持该请求方法')
+        }
+
+        if (ctx.path === clientAssetsPath) {
+            ctx.body = { baseUrl: uploads?.publicUrl(clientAssetPrefix) ?? null }
+            return
         }
 
         if (ctx.path === allRecordsPath) {

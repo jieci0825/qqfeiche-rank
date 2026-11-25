@@ -1,18 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { RankingItem } from '@/api'
+import { clientImageUrl } from '@/api/modules/client-assets'
 import defaultDriverUrl from '@/assets/record-board/default-driver.svg?url'
-import defaultCarUrl from '@/assets/rankings/default-car.png'
-import defaultPetUrl from '@/assets/rankings/default-pet.png'
 import defaultTeamUrl from '@/assets/record-board/default-team.svg?url'
 import FallbackImage from '@/views/records/components/FallbackImage.vue'
 
-defineProps<{ item: RankingItem }>()
+const props = defineProps<{ item: RankingItem }>()
 
-const defaultImages = {
-    driver: defaultDriverUrl,
-    car: defaultCarUrl,
-    pet: defaultPetUrl,
-}
+const defaultImage = computed(() => {
+    const { category } = props.item
+    return category === 'driver' ? defaultDriverUrl : clientImageUrl(`default-${category}`)
+})
 </script>
 
 <template>
@@ -20,7 +19,7 @@ const defaultImages = {
         <FallbackImage
             class="rank-identity__avatar"
             :src="item.imageUrl"
-            :fallback="defaultImages[item.category]"
+            :fallback="defaultImage"
             alt=""
         />
         <div class="rank-identity__details">

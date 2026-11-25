@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import logoUrl from '@/assets/record-board/qq-speed-logo-white.png'
+import { clientImageUrl } from '@/api/modules/client-assets'
 import sealUrl from '@/assets/record-board/seal-guofu.svg?url'
 
 const navigationItems = [
@@ -20,7 +20,9 @@ const navigationItems = [
             >
                 <img
                     class="client-header__logo"
-                    :src="logoUrl"
+                    :src="clientImageUrl('qq-speed-logo-white')"
+                    width="648"
+                    height="216"
                     alt="QQ 飞车手游"
                 />
                 <span

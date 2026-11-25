@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
+import { clientBackgroundImage } from '@/api/modules/client-assets'
 import ClientHeader from './components/ClientHeader.vue'
 
 const route = useRoute()
 const main = ref<HTMLElement | null>(null)
+const pageBackground = computed(() => clientBackgroundImage('ink-page-background'))
 
 watch(() => route.path, () => main.value?.scrollTo({ top: 0 }), { flush: 'post' })
 </script>
@@ -32,9 +34,8 @@ watch(() => route.path, () => main.value?.scrollTo({ top: 0 }), { flush: 'post' 
     height: 100dvh;
     overflow: hidden;
     color: var(--tk-color-text);
-    background: var(--tk-color-bg)
-        url('@/assets/record-board/ink-page-background.png') center top / cover
-        no-repeat;
+    background: var(--tk-color-bg) center top / cover no-repeat;
+    background-image: v-bind(pageBackground);
 
     .client-main {
         --client-scrollbar-thumb: var(--tk-color-scrollbar-thumb);
