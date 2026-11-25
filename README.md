@@ -201,11 +201,7 @@ ssh "$deploy_host" "mkdir -p '$deploy_dir'" &&
 
 在**服务器部署目录**创建 `.env.production`，设置首次启动时用于初始化后台账号的 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD`。使用 COS 时，在同一个文件里配置上文的五项 `COS_*` 变量，COS CORS 放行 `http://feiche-admin.coderjc.cn`，并为 client 使用 HTTPS 的 `COS_PUBLIC_BASE_URL`。
 
-按下一节在本地构建并上传两套 `dist`。上传完成后，在本地通过 SSH 启动服务器上的 Compose 服务。
-
-```bash
-ssh "$deploy_host" "cd '$deploy_dir' && docker compose up -d --build"
-```
+按下一节在本地构建并上传两套 `dist`。随后按 [Docker 部署更新](docs/Docker部署更新.md)在本地构建并上传 API 镜像，再启动服务器上的 Compose 服务。
 
 Compose 将 SQLite 数据目录挂载到命名卷 `qqfeiche-rank_sqlite-data`。首次用空卷启动时会创建数据库，重新构建或替换容器会继续使用同一个卷。
 
